@@ -1,4 +1,4 @@
-# GeCo: Quality Explanations in Real Time
+# GeCo: Quality Counterfactual Explanations in Real Time
 
 To run GeCo, you need to have Julia installed ([link](https://julialang.org/downloads/)). Then you can run the following commands to load the package.
 

@@ -1,0 +1,68 @@
+{
+    "features": [
+        {
+            "name": "Sex",
+            "constraints": ["inactionable"],
+            "type": "ordinal"
+        },
+        {
+            "name": "Age",
+            "type": "numerical",
+            "constraints": ["increasing"]
+        },
+        {
+            "name": "NativeCountry",
+            "type": "categorical",
+            "constraints": ["inactionable"]
+        },
+        {
+            "name": "EducationNumber",
+            "type": "numerical",
+            "constraints": ["increasing"]
+        },
+        {
+            "name": "EducationLevel",
+            "type": "ordinal"
+        },
+        {
+            "name": "CapitalGain",
+            "type": "numerical"
+        },
+        {
+            "name": "CapitalLoss",
+            "type": "numerical"
+        },
+        {
+            "name": "HoursPerWeek",
+            "type": "numerical"
+        },
+        {
+            "name": "WorkClass",
+            "type": "categorical",
+            "onehot": true
+        },
+        {
+            "name": "MaritalStatus",
+            "type": "categorical",
+            "onehot": true,
+            "constraints": ["inactionable"]
+        },
+        {
+            "name": "Occupation",
+            "type": "categorical",
+            "onehot": true
+        },
+        {
+            "name": "Relationship",
+            "type": "categorical",
+            "onehot": true,
+            "constraints": ["inactionable"]
+        }
+    ],
+    "groups": [
+        ["WorkClass"],
+        ["MaritalStatus"],
+        ["Occupation"],
+        ["Relationship"]
+    ]
+}

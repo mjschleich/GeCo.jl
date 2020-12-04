@@ -1,0 +1,133 @@
+{
+    "features": [
+        {
+            "name": "age",
+            "type": "numerical",
+            "constraints": ["increasing"]
+        },
+        {
+            "name": "workclass_Government",
+            "type": "categorical"
+        },
+        {
+            "name": "workclass_OtherorUnknown",
+            "type": "categorical"
+        },
+        {
+            "name": "workclass_Private",
+            "type": "categorical"
+        },
+        {
+            "name": "workclass_Self_Employed",
+            "type": "categorical"
+        },
+        {
+            "name": "education_Assoc",
+            "type": "categorical"
+        },
+        {
+            "name": "education_Bachelors",
+            "type": "categorical"
+        },
+        {
+            "name": "education_Doctorate",
+            "type": "categorical"
+        },
+        {
+            "name": "education_HS_grad",
+            "type": "categorical"
+        },
+        {
+            "name": "education_Masters",
+            "type": "categorical"
+        },
+        {
+            "name": "education_Prof_school",
+            "type": "categorical"
+        },
+        {
+            "name": "education_School",
+            "type": "categorical"
+        },
+        {
+            "name": "education_Some_college",
+            "type": "categorical"
+        },
+        {
+            "name": "marital_status_Divorced",
+            "type": "categorical"
+        },
+        {
+            "name": "marital_status_Married",
+            "type": "categorical"
+        },
+        {
+            "name": "marital_status_Separated",
+            "type": "categorical"
+        },
+        {
+            "name": "marital_status_Single",
+            "type": "categorical"
+        },
+        {
+            "name": "marital_status_Widowed",
+            "type": "categorical"
+        },
+        {
+            "name": "occupation_Blue_Collar",
+            "type": "categorical"
+        },
+        {
+            "name": "occupation_OtherOrUnknown",
+            "type": "categorical"
+        },
+        {
+            "name": "occupation_Professional",
+            "type": "categorical"
+        },
+        {
+            "name": "occupation_Sales",
+            "type": "categorical"
+        },
+        {
+            "name": "occupation_Service",
+            "type": "categorical"
+        },
+        {
+            "name": "occupation_White_Collar",
+            "type": "categorical"
+        },
+        {
+            "name": "hours_per_week",
+            "type": "numerical"
+        },
+        {
+            "name": "race_Other",
+            "type": "categorical",
+            "constraints": ["inactionable"]
+        },
+        {
+            "name": "race_White",
+            "type": "categorical",
+            "constraints": ["inactionable"]
+        },
+        {
+            "name": "gender_Female",
+            "type": "categorical",
+            "constraints": ["inactionable"]
+        },
+        {
+            "name": "gender_Male",
+            "type": "categorical",
+            "constraints": ["inactionable"]
+        }
+    ],
+    "groups": [
+        ["workclass_Government", "workclass_OtherorUnknown", "workclass_Private", "workclass_Self_Employed"],
+        ["education_Assoc", "education_Bachelors", "education_Doctorate", "education_HS_grad", "education_Masters", "education_Prof_school", "education_School", "education_Some_college"],
+        ["marital_status_Divorced", "marital_status_Married", "marital_status_Separated", "marital_status_Single", "marital_status_Widowed"],
+        ["occupation_Blue_Collar", "occupation_OtherOrUnknown", "occupation_Professional", "occupation_Sales", "occupation_Service", "occupation_White_Collar"],
+        ["race_Other", "race_White"],
+        ["gender_Female", "gender_Male"]
+    ]
+}

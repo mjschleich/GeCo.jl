@@ -1,0 +1,185 @@
+{
+    "label" :
+    {
+            "name" : "NoClaim",
+            "type" : "binary",
+            "desired_outcome" : true
+    },
+    "features" : [
+          {
+                  "name" : "Vehicle",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Calendar_Year",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Model_Year",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Blind_Make",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Blind_Model",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat1",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat2",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat3",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat4",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat5",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat6",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat7",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat8",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat9",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat10",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat11",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Cat12",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "Var1",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Var2",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Var3",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Var4",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Var5",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Var6",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Var7",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "Var8",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "NVVar1",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "NVVar2",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "NVVar3",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "NVVar4",
+                  "type" : "numerical",
+                  "constraints" : []
+          }
+    ],
+    "groups" : [
+     ["Blind_Make"],
+     ["Blind_Model"],
+     ["Cat1"],
+     ["Cat2"],
+     ["Cat3"],
+     ["Cat4"],
+     ["Cat5"],
+     ["Cat6"],
+     ["Cat7"],
+     ["Cat8"],
+     ["Cat9"],
+     ["Cat10"],
+     ["Cat11"],
+     ["Cat12"]
+    ]
+  }

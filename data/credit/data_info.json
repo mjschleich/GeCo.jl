@@ -1,0 +1,65 @@
+{
+    "features": [
+        {
+            "name": "isMale",
+            "type": "categorical",
+            "constraints": ["inactionable"]
+        },
+        {
+            "name": "isMarried",
+            "type": "categorical",
+            "constraints": ["inactionable"]
+        },
+        {
+            "name": "AgeGroup",
+            "type": "ordinal"
+        },
+        {
+            "name": "EducationLevel",
+            "type": "ordinal"
+        },
+        {
+            "name": "MaxBillAmountOverLast6Months",
+            "type": "continuous"
+        },
+        {
+            "name": "MaxPaymentAmountOverLast6Months",
+            "type": "continuous"
+        },
+        {
+            "name": "MonthsWithZeroBalanceOverLast6Months",
+            "type": "continuous"
+        },
+        {
+            "name": "MonthsWithLowSpendingOverLast6Months",
+            "type": "continuous"
+        },
+        {
+            "name": "MonthsWithHighSpendingOverLast6Months",
+            "type": "continuous"
+        },
+        {
+            "name": "MostRecentBillAmount",
+            "type": "continuous"
+        },
+        {
+            "name": "MostRecentPaymentAmount",
+            "type": "continuous"
+        },
+        {
+            "name": "TotalOverdueCounts",
+            "type": "continuous"
+        },
+        {
+            "name": "TotalMonthsOverdue",
+            "type": "continuous"
+        },
+        {
+            "name": "HasHistoryOfOverduePayments",
+            "type": "continuous",
+            "constraints": ["increasing"]
+        }
+    ],
+    "groups": [
+    ]
+}

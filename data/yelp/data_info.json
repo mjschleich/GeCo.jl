@@ -1,0 +1,183 @@
+{
+    "label" :
+    {
+            "name" : "review_stars",
+            "type" : "categorical",
+            "desired_outcome" : 5
+    },
+    "features" : [
+          {
+                  "name" : "review_year",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "review_month",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "review_day",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "useful",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "funny",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "cool",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "state_id",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          },
+          {
+                  "name" : "latitude",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "longitude",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "business_stars",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "reviewcount",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "is_open",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "review_count",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "year_joined",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "user_useful",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "user_funny",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "user_cool",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "fans",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "average_stars",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliement_hot",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliment_more",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliment_profile",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliment_cute",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliment_list",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliment_note",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                "name" : "compliment_plain",
+                "type" : "numerical",
+                "constraints" : []
+          },
+          {
+                  "name" : "compliment_cool",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliment_funny",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliment_writer",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "compliment_photos",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                  "name" : "attribute_count",
+                  "type" : "numerical",
+                  "constraints" : []
+          },
+          {
+                "name" : "city",
+                "type" : "categorical",
+                "onehot" : true,
+                "constraints" : []
+          },
+          {
+                  "name" : "category",
+                  "type" : "categorical",
+                  "onehot" : true,
+                  "constraints" : []
+          }
+    ],
+    "groups" : [
+     ["city"],
+        ["state_id"],
+     ["category"]
+    ]
+  }

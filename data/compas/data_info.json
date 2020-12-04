@@ -1,0 +1,37 @@
+{
+    "label" :
+    {
+        "name" : "TwoYearRecid",
+        "type" : "categorical",
+        "constraints" : []
+    },
+    "features" : [
+        {
+                "name" : "Race",
+                "type" : "numerical",
+                "constraints" : []
+        },
+        {
+                "name" : "Sex",
+                "type" : "numerical",
+                "constraints" : []
+        },
+        {
+                "name" : "PriorsCount",
+                "type" : "numerical",
+                "constraints" : []
+        },
+        {
+                "name" : "ChargeDegree",
+                "type" : "numerical",
+                "constraints" : []
+        },
+        {
+                "name" : "AgeGroup",
+                "type" : "ordinal",
+                "constraints" : []
+        }
+    ],
+    "groups" : [
+    ]
+  }

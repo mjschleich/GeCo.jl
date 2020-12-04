@@ -1,6 +1,6 @@
 # GeCo: Quality Explanations in Real Time
 
-To run GeCo, you need to have Julia installed [link](https://julialang.org/downloads/). Then you can run the following commands to load the package.
+To run GeCo, you need to have Julia installed ([link](https://julialang.org/downloads/)). Then you can run the following commands to load the package.
 
 ```Julia
 using Pkg; Pkg.activate(".")

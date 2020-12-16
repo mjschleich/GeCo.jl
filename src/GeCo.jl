@@ -13,7 +13,7 @@ const NUM_EXTRA_FEASIBLE_SPACE_COL = 2
 
 # Implements the struct for features and feature groups, as well as the methods to initializeFeatures
 include("utils/FeatureStruct.jl")
-export Feature, FeatureGroup
+export Feature, FeatureGroup, INCREASING, DECREASING, initializeGroups
 
 # Implementation of the Δ-representation
 include("dataManager/DataManager.jl")
@@ -21,7 +21,7 @@ export materialize, DataManager
 
 # Implements the struct for features and feature groups, as well as the methods to initializeFeatures
 include("components/feasibleSpace.jl")
-export feasibleSpace, initDomains
+export feasibleSpace, feasibleSpace2, initDomains, @GROUP, @PLAF, PLAFProgram, ground, initPLAF
 
 # Implements partial evaluation for Random Forest Classifiers
 include("classifier/RandomForestEval.jl")

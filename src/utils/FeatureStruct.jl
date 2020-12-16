@@ -1,6 +1,4 @@
-# module FeatureStruct
-
-# export FeatureConstraint, FeatureType, Feature, CONTINUOUS, CATEGORICAL, ORDINAL, NOCONSTRAINT, INCREASING, DECREASING, FeatureGroup
+using MLJScientificTypes
 
 @enum FeatureConstraint begin
     NOCONSTRAINT
@@ -22,6 +20,16 @@ struct Feature
     range::Float64
 end
 
+
+struct Feature_new
+    name::String
+    type::FeatureType
+    actionable::Bool
+    constraint::FeatureConstraint
+    range::Float64
+end
+
+
 struct FeatureGroup
     features::Array{Feature, 1}
     names::Array{String, 1}
@@ -30,11 +38,19 @@ struct FeatureGroup
 end
 
 
+struct FeatureGroup_new
+    # features::Array{Feature, 1}
+    # names::Array{String, 1}
+    features::Tuple{Vararg{Symbol}}
+    indexes::BitVector
+    ranges::Vector{Float64}
+    allCategorical::Bool
+end
+
 function initializeFeatures(file_path::String, data::DataFrame)
     json_file = open(file_path, "r")
     return initializeFeatures(JSON.parse(json_file), data)
 end
-
 
 function initializeFeatures(features::Dict, data::DataFrame)
 
@@ -149,5 +165,58 @@ function initializeFeatures(features::Dict, data::DataFrame)
     return Dict(feature.name => feature for feature in feature_list), groups
 end
 
+function initializeGroups(prog::PLAFProgram, data::DataFrame)
 
-# end
+    feature_list = Array{Feature,1}()
+    groups = Array{FeatureGroup_new, 1}()
+
+    addedFeatures = Set{Symbol}()
+    onehotFeature = falses(ncol(data))
+
+    for group in prog.groups
+
+        allCategorical = true
+
+        indexes = falses(ncol(data))
+        ranges = Vector{Float64}(undef, length(group))
+
+        for (idx, feature) in enumerate(group)
+            @assert feature ∈ propertynames(data) "The feature $feature does not occur in the input data."
+            @assert feature ∉ addedFeatures "Each feature can be in at most one group!"
+            push!(addedFeatures, feature)
+            indexes[findfirst(isequal(feature),propertynames(data))] = true
+            allCategorical = (elscitype(data[!,feature]) == Multiclass)
+            ranges[idx] = maximum(data[!,feature]) - minimum(data[!,feature])
+        end
+
+        push!(groups,
+            FeatureGroup_new(
+                group,
+                indexes,
+                ranges,
+                allCategorical
+                )
+            )
+    end
+
+    for feature in propertynames(data)
+        if feature ∉ addedFeatures
+            @assert feature ∈ propertynames(data) "The feature $feature does not occur in the input data."
+
+            indexes = falses(ncol(data))
+            indexes[findfirst(isequal(feature),propertynames(data))] = true
+
+            push!(groups,
+                FeatureGroup_new(
+                    (feature,),
+                    indexes,
+                    [maximum(data[!,feature]) - minimum(data[!,feature])],
+                    elscitype(data[!,feature]) == Multiclass
+                    )
+            )
+        end
+    end
+
+    return groups
+end
+

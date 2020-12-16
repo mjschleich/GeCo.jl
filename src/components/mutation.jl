@@ -33,12 +33,8 @@ function mutation!(
                 fidx = group.indexes[findex]
                 for s in 1:num_samples
                     val = df[sampled_rows[s], fname]
-                    o_val = entity[fname]
-                    # check generation
-                    # mutatedInstances[num_mutated_rows+s, :generation] = generations
-
                     mutatedInstances[num_mutated_rows+s, fname] = val
-                    mutatedInstances[num_mutated_rows+s, :mod][fidx] = 1 # (val != o_val)
+                    mutatedInstances[num_mutated_rows+s, :mod][fidx] = 1
                 end
             end
 

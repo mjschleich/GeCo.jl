@@ -12,16 +12,20 @@ const extra_col = [:score, :outc, :estcf, :mod]
 const NUM_EXTRA_FEASIBLE_SPACE_COL = 2
 
 # Implements the struct for features and feature groups, as well as the methods to initializeFeatures
-include("utils/FeatureStruct.jl")
-export Feature, FeatureGroup, INCREASING, DECREASING, initializeGroups
+# include("utils/FeatureStruct.jl")
+# export FeatureGroup
+
+# Implements the struct for features and feature groups, as well as the methods to initializeFeatures
+include("components/plaf.jl")
+export @PLAF, @GROUP, PLAFProgram, initPLAF
+
+# Implements the struct for features and feature groups, as well as the methods to initializeFeatures
+include("components/feasibleSpace.jl")
+export feasibleSpace, initDomains, ground, FeatureGroup
 
 # Implementation of the Δ-representation
 include("dataManager/DataManager.jl")
 export materialize, DataManager
-
-# Implements the struct for features and feature groups, as well as the methods to initializeFeatures
-include("components/feasibleSpace.jl")
-export feasibleSpace, feasibleSpace2, initDomains, @GROUP, @PLAF, PLAFProgram, ground, initPLAF
 
 # Implements partial evaluation for Random Forest Classifiers
 include("classifier/RandomForestEval.jl")
@@ -39,7 +43,7 @@ export score
 
 # Implementation of the distance function used by GeCo
 include("components/distance.jl")
-export distance, distanceFeatureGroup, findClosest, findMinimumObservable, findObservable
+export distance, distanceFeatureGroup, minimumObservableCounterfactual, observableCounterfactuals
 
 # Implementation of mutation operator
 include("components/initialPopulation.jl")
@@ -57,7 +61,7 @@ export mutation!
 include("components/selection.jl")
 export selection!
 
-function explain(orig_entity, data, path, classifier;
+function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgram, classifier;
     desired_class=1,
     k::Int64=100,
     max_num_generations::Int64=100,
@@ -65,42 +69,35 @@ function explain(orig_entity, data, path, classifier;
     max_num_samples::Int64=5,
     convergence_k::Int=5,
     norm_ratio::Array{Float64,1}=default_norm_ratio,
-    domains=nothing,
-    compress_data=false,
-    return_df=false,
+    domains::Vector{DataFrame}=Vector{DataFrame}(),
+    compress_data::Bool=false,
+    return_df::Bool=false,
     ablation::Bool=false,
     run_crossover::Bool=true,
     run_mutation::Bool=true,
     verbose::Bool=false
     )
-    features, groups = initializeFeatures(path*"/data_info.json", data)
 
     # Compute the feasible space for each feature group
-    feasible_space = if isnothing(domains)
-            feasibleSpace(orig_entity, groups, data)
-        else
-            feasibleSpace(orig_entity, groups, domains)
-        end
+    feasible_space = feasibleSpace(data, orig_entity, program; domains=domains)
 
     distance_temp = Array{Float64, 1}(undef, 100000)
     representation_size = zeros(Int64, max_num_generations+1)
 
-    count::Int64 = 0
-
     generation::Int64 = 0
+    count::Int64 = 0
     converged::Bool = false
 
-    if verbose && !ablation
+    if !ablation && verbose
 
         print("-- Time init pop:\t")
-        population = @time initialPopulation(orig_entity,features,groups,feasible_space;
-            compress_data=compress_data)
+        population = @time initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
 
         count += size(population,1)
         representation_size[1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
 
         print("-- Time selection:\t")
-        @time selection!(population, k, orig_entity, features, classifier, desired_class;
+        @time selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
@@ -108,16 +105,18 @@ function explain(orig_entity, data, path, classifier;
             println("Generation: ", generation+1)
 
             print("-- Time Crossover:\t")
-            @time crossover!(population, orig_entity, groups, feasible_space)
+            @time crossover!(population, orig_entity, feasible_space)
 
             print("-- Time Mutation:\t")
-            @time mutation!(population, groups, feasible_space; max_num_samples = max_num_samples)
+            @time mutation!(population, feasible_space; max_num_samples = max_num_samples)
 
             count::Int64 += max(0, size(population,1) - k)
             representation_size[generation+1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
 
             print("-- Time Selection:\t")
-            converged = @time selection!(population, k, orig_entity, features, classifier, desired_class; norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
+            converged = @time selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+                norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
+
             generation += 1
         end
 
@@ -127,27 +126,27 @@ function explain(orig_entity, data, path, classifier;
 
     elseif !ablation
 
-        population = initialPopulation(orig_entity,features,groups,feasible_space;
-            compress_data=compress_data)
+        population = initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
 
         count += size(population,1)
         representation_size[1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
 
-        selection!(population, k, orig_entity, features, classifier, desired_class;
+        selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
         while generation < min_num_generations || !converged && generation < max_num_generations
 
-            crossover!(population, orig_entity, groups, feasible_space)
+            crossover!(population, orig_entity, feasible_space)
 
-            mutation!(population, groups, feasible_space; max_num_samples = max_num_samples)
+            mutation!(population, feasible_space; max_num_samples = max_num_samples)
 
             size_pop = size(population)
             count += max(0, size_pop[1] - k)
             representation_size[generation+1] = (compress_data ? size_pop[2] : size_pop[1] * size_pop[2])
 
-            converged = selection!(population, k, orig_entity, features, classifier, desired_class; norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
+            converged = selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+                norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
 
             generation += 1
         end
@@ -156,13 +155,12 @@ function explain(orig_entity, data, path, classifier;
         mutation_time = 0.0
         crossover_time = 0.0
 
-        prep_time = @elapsed (population) = initialPopulation(orig_entity,features,groups,feasible_space;
-        compress_data=compress_data)
+        prep_time = @elapsed (population) = initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
 
         count += size(population,1)
         representation_size[1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
 
-        stime = @elapsed selection!(population, k, orig_entity, features, classifier, desired_class;
+        stime = @elapsed selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
@@ -171,12 +169,12 @@ function explain(orig_entity, data, path, classifier;
         while generation < min_num_generations || !converged && generation < max_num_generations
 
             if run_crossover
-                ctime = @elapsed crossover!(population, orig_entity, groups, feasible_space)
+                ctime = @elapsed crossover!(population, orig_entity, feasible_space)
                 crossover_time += ctime
             end
 
             if run_mutation
-                mtime = @elapsed mutation!(population, groups, feasible_space; max_num_samples = max_num_samples)
+                mtime = @elapsed mutation!(population, feasible_space; max_num_samples = max_num_samples)
                 mutation_time += mtime
             end
 
@@ -184,13 +182,14 @@ function explain(orig_entity, data, path, classifier;
             count += max(0, size_pop[1] - k)
             representation_size[generation+1] = (compress_data ? size_pop[2] : size_pop[1] * size_pop[2])
 
-            stime = @elapsed (converged) = selection!(population, k, orig_entity, features, classifier, desired_class; norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
+            stime = @elapsed (converged) = selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+                norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
             selection_time += stime
 
             generation += 1
         end
 
-        if compress_data
+        if return_df && compress_data
             population = materialize(population)
             sort!(population, :score)
         end
@@ -244,7 +243,7 @@ function testExplanations(explanations, orig_entity)
 
         for (i,f) in enumerate(eachindex(explanation[1:end-3]))
             if explanation.mod[i] && explanation[f] == orig_entity[f]
-                println("In Row $row: $(explanation[f])  == $(orig_entity[f]) for $f")
+                println("In Row $row: $(explanation[f]) == $(orig_entity[f]) for $f")
             end
         end
     end

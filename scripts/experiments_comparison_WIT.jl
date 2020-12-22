@@ -32,7 +32,7 @@ function runExperiment(dataset::String, desired_class::Int64, feasibility_check:
         if X[i, :pred] != desired_class
             # (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
             orig_entity = X[i, :]
-            time = @elapsed (clostest_entity, distance_min) = findMinimumObservable(X, orig_entity, features; label_name=:pred, desired_class=desired_class, check_feasibility=feasibility_check)
+            time = @elapsed (clostest_entity, distance_min) = minimumObservableCounterfactual(X, orig_entity, features; label_name=:pred, desired_class=desired_class, check_feasibility=feasibility_check)
 
             if isnothing(clostest_entity)
                 # println("Entity $i cannot be explained.")

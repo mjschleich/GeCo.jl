@@ -4,7 +4,10 @@
 ####
 
 function mutation!(
-    population::DataFrame, groups::Vector{FeatureGroup}, feasible_space::Vector{DataFrame}; max_num_samples::Int64 = 5)
+    population::DataFrame, feasible_space::FeasibleSpace; max_num_samples::Int64 = 5)
+
+    groups::Vector{FeatureGroup} = feasible_space.groups
+    sample_space::Vector{DataFrame} = feasible_space.feasibleSpace
 
     row = 1
     while row < nrow(population) && population[row, :estcf]
@@ -22,7 +25,7 @@ function mutation!(
 
         num_mutated_rows = 0
         for (index,group)  in enumerate(groups)
-            df = feasible_space[index]
+            df = sample_space[index]
 
             (isempty(df) || any(modified_features[group.indexes])) && continue;
 
@@ -30,12 +33,14 @@ function mutation!(
             sampled_rows = StatsBase.sample(1:nrow(df), StatsBase.FrequencyWeights(df.count), num_samples; replace=false, ordered=true)
 
             for (findex,fname) in enumerate(group.names)
-                fidx = group.indexes[findex]
+                # fidx = group.indexes[findex]
                 for s in 1:num_samples
-                    val = df[sampled_rows[s], fname]
-                    mutatedInstances[num_mutated_rows+s, fname] = val
-                    mutatedInstances[num_mutated_rows+s, :mod][fidx] = 1
+                    mutatedInstances[num_mutated_rows+s, fname] = df[sampled_rows[s], fname]
                 end
+            end
+
+            for s in 1:num_samples
+                mutatedInstances[num_mutated_rows+s, :mod] .|= group.indexes
             end
 
             num_mutated_rows += num_samples
@@ -46,7 +51,10 @@ function mutation!(
     end
 end
 
-function mutation!(manager::DataManager, groups::Vector{FeatureGroup}, feasible_space::Vector{DataFrame}; max_num_samples::Int64 = 5)
+function mutation!(manager::DataManager, feasible_space::FeasibleSpace; max_num_samples::Int64 = 5)
+
+    groups::Vector{FeatureGroup} = feasible_space.groups
+    sample_space::Vector{DataFrame} = feasible_space.feasibleSpace
 
     keyset = collect(keys(manager))
 
@@ -61,21 +69,20 @@ function mutation!(manager::DataManager, groups::Vector{FeatureGroup}, feasible_
             repeat!(entity_df, max_num_samples)
 
             for (index,group)  in enumerate(groups)
-                df = feasible_space[index]
+                df = sample_space[index]
 
                 (isempty(df) || any(mod[group.indexes])) && continue;
 
                 num_samples = min(max_num_samples, nrow(df))
                 sampled_rows = StatsBase.sample(1:nrow(df), StatsBase.FrequencyWeights(df.count), num_samples; replace=false, ordered=true)
 
-                refined_modified_features = copy(mod)
-                refined_modified_features[group.indexes] .= 1
+                refined_modified_features = mod .| group.indexes
 
                 # Would it be safe to use copycols=false here?
                 mutatedInstances = hcat(
                     entity_df[1:num_samples,:],
                     df[sampled_rows, 1:end-NUM_EXTRA_FEASIBLE_SPACE_COL])
-                mutatedInstances[:,:mod] = (refined_modified_features for i=1:nrow(mutatedInstances))
+                # mutatedInstances[:,:mod] = (refined_modified_features for i=1:nrow(mutatedInstances))
 
                 append!(manager, refined_modified_features, mutatedInstances)
             end

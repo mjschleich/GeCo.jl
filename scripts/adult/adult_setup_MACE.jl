@@ -43,4 +43,4 @@ y = categorical(y)
 pickle = pyimport("pickle")
 classifier = pickle.load(pybuiltin("open")("scripts/mace_models/adult_model.pickle","rb"))
 
-orig_entity = X[6, :]
+orig_instance = X[6, :]

@@ -45,4 +45,4 @@ classifier = machine(tree_model, X, y)
 # train
 MLJ.fit!(classifier, rows=train)
 
-orig_entity = X[6, :]
+orig_instance = X[6, :]

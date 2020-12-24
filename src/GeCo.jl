@@ -61,7 +61,7 @@ export mutation!
 include("components/selection.jl")
 export selection!
 
-function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgram, classifier;
+function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProgram, classifier;
     desired_class=1,
     k::Int64=100,
     max_num_generations::Int64=100,
@@ -79,7 +79,7 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
     )
 
     # Compute the feasible space for each feature group
-    feasible_space = feasibleSpace(data, orig_entity, program; domains=domains)
+    feasible_space = feasibleSpace(data, orig_instance, program; domains=domains)
 
     distance_temp = Array{Float64, 1}(undef, 100000)
     representation_size = zeros(Int64, max_num_generations+1)
@@ -91,13 +91,13 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
     if !ablation && verbose
 
         print("-- Time init pop:\t")
-        population = @time initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
+        population = @time initialPopulation(orig_instance, feasible_space; compress_data=compress_data)
 
         count += size(population,1)
         representation_size[1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
 
         print("-- Time selection:\t")
-        @time selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+        @time selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
@@ -105,7 +105,7 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
             println("Generation: ", generation+1)
 
             print("-- Time Crossover:\t")
-            @time crossover!(population, orig_entity, feasible_space)
+            @time crossover!(population, orig_instance, feasible_space)
 
             print("-- Time Mutation:\t")
             @time mutation!(population, feasible_space; max_num_samples = max_num_samples)
@@ -114,7 +114,7 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
             representation_size[generation+1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
 
             print("-- Time Selection:\t")
-            converged = @time selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+            converged = @time selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
                 norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
 
             generation += 1
@@ -126,18 +126,18 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
 
     elseif !ablation
 
-        population = initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
+        population = initialPopulation(orig_instance, feasible_space; compress_data=compress_data)
 
         count += size(population,1)
         representation_size[1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
 
-        selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+        selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
         while generation < min_num_generations || !converged && generation < max_num_generations
 
-            crossover!(population, orig_entity, feasible_space)
+            crossover!(population, orig_instance, feasible_space)
 
             mutation!(population, feasible_space; max_num_samples = max_num_samples)
 
@@ -145,7 +145,7 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
             count += max(0, size_pop[1] - k)
             representation_size[generation+1] = (compress_data ? size_pop[2] : size_pop[1] * size_pop[2])
 
-            converged = selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+            converged = selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
                 norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
 
             generation += 1
@@ -155,12 +155,12 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
         mutation_time = 0.0
         crossover_time = 0.0
 
-        prep_time = @elapsed (population) = initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
+        prep_time = @elapsed (population) = initialPopulation(orig_instance, feasible_space; compress_data=compress_data)
 
         count += size(population,1)
         representation_size[1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
 
-        stime = @elapsed selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+        stime = @elapsed selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
@@ -169,7 +169,7 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
         while generation < min_num_generations || !converged && generation < max_num_generations
 
             if run_crossover
-                ctime = @elapsed crossover!(population, orig_entity, feasible_space)
+                ctime = @elapsed crossover!(population, orig_instance, feasible_space)
                 crossover_time += ctime
             end
 
@@ -182,7 +182,7 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
             count += max(0, size_pop[1] - k)
             representation_size[generation+1] = (compress_data ? size_pop[2] : size_pop[1] * size_pop[2])
 
-            stime = @elapsed (converged) = selection!(population, k, orig_entity, feasible_space, classifier, desired_class;
+            stime = @elapsed (converged) = selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
                 norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
             selection_time += stime
 
@@ -206,21 +206,21 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
 end
 
 
-function actions(counterfactuals::DataFrame, orig_entity; num_actions = 5)
+function actions(counterfactuals::DataFrame, orig_instance; num_actions = 5)
     for idx in 1:num_actions
         cf = counterfactuals[idx,:]
         println("\n------- COUNTERFACTUAL $idx\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)")
-        for feature in propertynames(orig_entity)
-            delta = cf[feature] - orig_entity[feature]
+        for feature in propertynames(orig_instance)
+            delta = cf[feature] - orig_instance[feature]
             if delta != 0
-                println(feature, " : \t",orig_entity[feature], " => ", cf[feature])
+                println(feature, " : \t",orig_instance[feature], " => ", cf[feature])
             end
         end
     end
 end
 
 
-function actions(counterfactuals::DataManager, orig_entity; num_actions = 5)
+function actions(counterfactuals::DataManager, orig_instance; num_actions = 5)
 
     # Turn DataManager into a DataFrame
     df = materialize(counterfactuals)
@@ -229,21 +229,21 @@ function actions(counterfactuals::DataManager, orig_entity; num_actions = 5)
     for idx in 1:num_actions
         cf = df[idx,:]
         println("\n------- COUNTERFACTUAL $idx\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)")
-        for feature in String.(names(orig_entity))
-            delta = cf[feature] - orig_entity[feature]
+        for feature in String.(names(orig_instance))
+            delta = cf[feature] - orig_instance[feature]
             if delta != 0
-                println(feature, " : \t",orig_entity[feature], " => ", cf[feature])
+                println(feature, " : \t",orig_instance[feature], " => ", cf[feature])
             end
         end
     end
 end
 
-function testExplanations(explanations, orig_entity)
+function testExplanations(explanations, orig_instance)
     for (row, explanation) in enumerate(eachrow(explanations))
 
         for (i,f) in enumerate(eachindex(explanation[1:end-3]))
-            if explanation.mod[i] && explanation[f] == orig_entity[f]
-                println("In Row $row: $(explanation[f]) == $(orig_entity[f]) for $f")
+            if explanation.mod[i] && explanation[f] == orig_instance[f]
+                println("In Row $row: $(explanation[f]) == $(orig_instance[f]) for $f")
             end
         end
     end

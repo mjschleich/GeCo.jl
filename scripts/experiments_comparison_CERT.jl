@@ -81,10 +81,10 @@ function runExperiment(dataset::String, desired_class::Int64)
                 if (desired_class == 1 ? predictions[i]<0.5 : predictions[i]>0.5)
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
-                    orig_entity = X[i, :]
+                    orig_instance = X[i, :]
 
                      # the naive
-                     time = @elapsed explanation = explain_naive(orig_entity, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, num_generations=gens)
+                     time = @elapsed explanation = explain_naive(orig_instance, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, num_generations=gens)
                     if (explanation === nothing)
                         print("fail to init naive")
                         failInit += 1
@@ -93,19 +93,19 @@ function runExperiment(dataset::String, desired_class::Int64)
                     end
                     dist =
 		    	 if nrow(explanation) >= 3
-			    distance(explanation[1:3, :], orig_entity, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
+			    distance(explanation[1:3, :], orig_instance, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
 			 else
-			    distance(explanation, orig_entity, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
+			    distance(explanation, orig_instance, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
 			 end
 
                      # println("--", sum(explanation.mod[1]), explanation.mod[1:3], dist, argmin(dist))
 
                      changed_feats = falses(size(X,2))
                      for (fidx, feat) in enumerate(propertynames(X))
-                         changed_feats[fidx] = (orig_entity[feat] != explanation[1,feat])
+                         changed_feats[fidx] = (orig_instance[feat] != explanation[1,feat])
                      end
                      if (all(.!changed_feats))
-                         return (explanation, orig_entity, i)
+                         return (explanation, orig_instance, i)
                      end
 
                      ## We only consider the top-explanation for this

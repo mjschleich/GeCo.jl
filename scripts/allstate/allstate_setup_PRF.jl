@@ -85,7 +85,7 @@ println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
 #     end
 # end
 
-orig_entity = X[1,:]
+orig_instance = X[1,:]
 
-classifier = initPartialRandomForestEval(mlj_classifier, orig_entity, 1);
-full_classifier = initRandomForestEval(mlj_classifier, orig_entity, 1);
+classifier = initPartialRandomForestEval(mlj_classifier, orig_instance, 1);
+full_classifier = initRandomForestEval(mlj_classifier, orig_instance, 1);

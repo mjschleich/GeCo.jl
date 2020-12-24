@@ -56,7 +56,7 @@ println("Accuracy train data: $(accuracy(mode.(yhat_train), y[train]))")
 println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
 
 
-orig_entity = X[536, :]
+orig_instance = X[536, :]
 
 
 

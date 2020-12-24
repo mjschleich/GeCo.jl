@@ -2,7 +2,7 @@
 #######
 ### Crossover operator
 #######
-function crossover!(population::DataFrame, orig_entity::DataFrameRow, feasible_space::FeasibleSpace)
+function crossover!(population::DataFrame, orig_instance::DataFrameRow, feasible_space::FeasibleSpace)
 
     feature_groups = feasible_space.groups
     sample_space = feasible_space.feasibleSpace
@@ -26,7 +26,7 @@ function crossover!(population::DataFrame, orig_entity::DataFrameRow, feasible_s
             # check whether we can change the feature value to something else
             (isempty(df) || group.allCategorical || !any(parent1.mod[group.indexes])) && continue
 
-            space = df[df.distance .< distance(parent1,orig_entity,num_features,ranges), :]
+            space = df[df.distance .< distance(parent1,orig_instance,num_features,ranges), :]
             isempty(space) && continue
 
             sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count), 1)
@@ -75,7 +75,7 @@ function crossover!(population::DataFrame, orig_entity::DataFrameRow, feasible_s
 end
 
 
-function crossover!(manager::DataManager, orig_entity::DataFrameRow, feasible_space::FeasibleSpace)
+function crossover!(manager::DataManager, orig_instance::DataFrameRow, feasible_space::FeasibleSpace)
 
     feature_groups = feasible_space.groups
     sample_space = feasible_space.feasibleSpace
@@ -84,7 +84,7 @@ function crossover!(manager::DataManager, orig_entity::DataFrameRow, feasible_sp
     num_groups = length(mod_list)
 
     # print(num_groups, size(manager))
-    c3=DataFrame(orig_entity)
+    c3=DataFrame(orig_instance)
     c3.score=0.0
     c3.outc=false
     c3.estcf=false
@@ -108,7 +108,7 @@ function crossover!(manager::DataManager, orig_entity::DataFrameRow, feasible_sp
             # check whether we can change the feature value to something else
             (isempty(df) || group.allCategorical || !any(mod_parent1[group.indexes])) && continue
 
-            group_dist = distance(parent1,orig_entity,feasible_space.num_features, feasible_space.ranges)
+            group_dist = distance(parent1,orig_instance,feasible_space.num_features, feasible_space.ranges)
             rows::BitVector = df.distance .< group_dist
 
             space = df[rows, :]::DataFrame
@@ -139,7 +139,7 @@ function crossover!(manager::DataManager, orig_entity::DataFrameRow, feasible_sp
 
             ## TODO: Can we improve this bit?
 
-            #push!(manager, modified_features, (orig_entity[modified_features]..., score=0.0, outc=false, estcf=false))
+            #push!(manager, modified_features, (orig_instance[modified_features]..., score=0.0, outc=false, estcf=false))
             push!(manager, modified_features, c3[1,:])
             c = get_store(manager, modified_features)[end, :]
 

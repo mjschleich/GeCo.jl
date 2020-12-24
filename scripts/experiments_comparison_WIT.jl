@@ -31,17 +31,17 @@ function runExperiment(dataset::String, desired_class::Int64, feasibility_check:
     for i in 1:size(X,1)
         if X[i, :pred] != desired_class
             # (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
-            orig_entity = X[i, :]
-            time = @elapsed (clostest_entity, distance_min) = minimumObservableCounterfactual(X, orig_entity, features; label_name=:pred, desired_class=desired_class, check_feasibility=feasibility_check)
+            orig_instance = X[i, :]
+            time = @elapsed (clostest_entity, distance_min) = minimumObservableCounterfactual(X, orig_instance, features; label_name=:pred, desired_class=desired_class, check_feasibility=feasibility_check)
 
             if isnothing(clostest_entity)
                 # println("Entity $i cannot be explained.")
                 num_failed_explained += 1
             else
                 changed = []
-                for feature in propertynames(orig_entity)
+                for feature in propertynames(orig_instance)
                     if feature != :pred
-                        push!(changed, orig_entity[feature] != clostest_entity[feature])
+                        push!(changed, orig_instance[feature] != clostest_entity[feature])
                     end
                 end
                 push!(num_changed, count(changed))

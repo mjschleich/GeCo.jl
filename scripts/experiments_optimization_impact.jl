@@ -58,7 +58,7 @@ function runBreakdownExperiment(dataset, desired_class)
             println("compress_data: $compress ($(Dates.hour(Dates.now())):$(Dates.minute(Dates.now())))")
 
             # Run explanation once for compilation
-            explain(orig_entity, X, path, clf;
+            explain(orig_instance, X, path, clf;
                 desired_class=desired_class,
                 compress_data=compress,
                 min_num_generations=5,
@@ -71,10 +71,10 @@ function runBreakdownExperiment(dataset, desired_class)
 
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
-                    orig_entity = X[i, :]
+                    orig_instance = X[i, :]
 
                     time = @elapsed (explanation, count, generation, rep_size) =
-                        explain(orig_entity, X, path, clf;
+                        explain(orig_instance, X, path, clf;
                             desired_class=desired_class,
                             compress_data=compress,
                             max_num_generations=5,
@@ -82,9 +82,9 @@ function runBreakdownExperiment(dataset, desired_class)
                             convergence_k=3,
                             domains=domains)
 
-                    # dist = distance(explanation[1:3, :], orig_entity, features, distance_temp; norm_ratio=[])
+                    # dist = distance(explanation[1:3, :], orig_instance, features, distance_temp; norm_ratio=[])
                     for (fidx, feat) in enumerate(propertynames(X))
-                        changed_feats[fidx] = (orig_entity[feat] != explanation[1,feat])
+                        changed_feats[fidx] = (orig_instance[feat] != explanation[1,feat])
                     end
 
                     ## We only consider the top-explanation for this

@@ -55,22 +55,35 @@ end;
 
 # each feature in exactly one of groups
 @testset "feature group check" begin
-    
+    feasible_space = feasibleSpace(X, orig_instance, p)
+    checker = false
+    features = Array{Symbol, 1}(undef, feasible_space.num_features)
+    for i in 1:14
+        features[i] = :None
+    end
+    index = 1
+    for feature_group in feasible_space.groups
+        for feature in feature_group.names
+            check = checker  || (feature in features)
+            
+            features[index] = feature
+            index += 1
+        end
+    end
+    @test checker == false
 end
 
-# @testset "Feasible Test" begin
-#     # for the credit data set, check whether the results follow the constraints
-#     include("credit/credit_setup.jl");
-#     orig_instance = orig_instance
-#     explanation,  = @time explain(orig_instance, X, path, classifier)
-#     for i in 1:size(explanation,1)
-#         ## for each entity check whether "isMale" and "isMarried" not changed and "HasHistoryOfOverduePayments" only INCREASING
-#         @test (explanation[i, "isMale"]  == orig_instance["isMale"]) & (explanation[i, "isMarried"]  == orig_instance["isMarried"]) & (explanation[i, "HasHistoryOfOverduePayments"]  >= orig_instance["HasHistoryOfOverduePayments"])
-#     end
+@testset "Feasible Test" begin
+    # for the credit data set, check whether the results follow the constraints
+    explanation,  = @time explain(orig_instance, X, p, classifier)
+    for i in 1:size(explanation,1)
+        ## for each entity check whether "isMale" and "isMarried" not changed and "HasHistoryOfOverduePayments" only INCREASING
+        @test (explanation[i, "isMale"]  == orig_instance["isMale"]) & (explanation[i, "isMarried"]  == orig_instance["isMarried"]) & (explanation[i, "HasHistoryOfOverduePayments"]  >= orig_instance["HasHistoryOfOverduePayments"])
+    end
 
-#     # test on the feasible space compute
+    # test on the feasible space compute
 
-#     # with delta representation (compress data)
+    # with delta representation (compress data)
 
-#     # manually call the init => check feasible and only one feature group changed
-# end
+    # manually call the init => check feasible and only one feature group changed
+end

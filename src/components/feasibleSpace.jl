@@ -1,4 +1,4 @@
-using GeneralizedGenerated
+using GeneralizedGenerated, MLJScientificTypes
 
 struct FeatureGroup
     features::Tuple{Vararg{Symbol}}
@@ -94,7 +94,7 @@ end
 
 function initGroups(prog::PLAFProgram, data::DataFrame)
 
-    feature_list = Array{Feature,1}()
+    #feature_list = Array{Feature,1}()
     groups = Array{FeatureGroup, 1}()
 
     addedFeatures = Set{Symbol}()

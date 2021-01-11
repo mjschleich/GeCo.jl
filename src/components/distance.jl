@@ -60,7 +60,7 @@ function distance(df::DataFrame, orig_instance::DataFrameRow, num_features::Int6
         norm_ratio[1] * (distance_temp[(row * 4) + 1] / num_features) +
         norm_ratio[2] * (distance_temp[(row * 4) + 2] / num_features) +
         norm_ratio[3] * (sqrt(distance_temp[(row * 4) + 3] / num_features))  +
-        norm_ratio[4] * distance_temp[(row * 4) + 4]
+        norm_ratio[4] * distance_temp[(row * 4) + 4] / num_features
         for row in 0:(nrow(df)-1)
     ]
 end

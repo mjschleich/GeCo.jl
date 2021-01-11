@@ -1,6 +1,6 @@
 
 using Pkg; Pkg.activate(".")
-using GeneticCounterfactual
+using GeCo
 using PyCall
 using Printf
 import Dates, JLD

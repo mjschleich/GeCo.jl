@@ -1,7 +1,7 @@
 
 
 using Pkg; Pkg.activate(".")
-using GeneticCounterfactual
+using GeCo
 
 using Printf
 import Dates, JLD

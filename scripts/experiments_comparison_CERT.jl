@@ -1,6 +1,6 @@
 
 using Pkg; Pkg.activate(".")
-using GeneticCounterfactual
+using GeCo
 
 include("naive_geco/NaiveGeco.jl")
 

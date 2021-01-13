@@ -14,11 +14,9 @@ end
 
 plaf_helper(x, t) = begin
     constraints = quote $(ground.(t)...) end
-    ret = quote
+    quote
         $push!($x.constraints, $constraints)
     end
-    println(ret)
-    ret
 end
 
 group_helper(x, t) = begin

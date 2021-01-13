@@ -21,7 +21,7 @@ export @PLAF, @GROUP, PLAFProgram, initPLAF
 
 # Implements the struct for features and feature groups, as well as the methods to initializeFeatures
 include("components/feasibleSpace.jl")
-export feasibleSpace, initDomains, ground, FeatureGroup
+export feasibleSpace, initDomains, ground, FeatureGroup, applyConstraint, initGroups
 
 # Implementation of the Δ-representation
 include("dataManager/DataManager.jl")
@@ -78,9 +78,6 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
     verbose::Bool=false
     )
 
-    # Compute the feasible space for each feature group
-    feasible_space = feasibleSpace(data, orig_entity, program; domains=domains)
-
     distance_temp = Array{Float64, 1}(undef, 100000)
     representation_size = zeros(Int64, max_num_generations+1)
 
@@ -89,6 +86,10 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
     converged::Bool = false
 
     if !ablation && verbose
+
+        # Compute the feasible space for each feature group
+        print("-- Time feasible space:\t")
+        feasible_space = @time feasibleSpace(data, orig_entity, program; domains=domains)
 
         print("-- Time init pop:\t")
         population = @time initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
@@ -126,6 +127,8 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
 
     elseif !ablation
 
+        feasible_space = feasibleSpace(data, orig_entity, program; domains=domains)
+
         population = initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
 
         count += size(population,1)
@@ -154,6 +157,8 @@ function explain(orig_entity::DataFrameRow, data::DataFrame, program::PLAFProgra
         selection_time = 0.0
         mutation_time = 0.0
         crossover_time = 0.0
+
+        feasible_space = feasibleSpace(data, orig_entity, program; domains=domains)
 
         prep_time = @elapsed (population) = initialPopulation(orig_entity, feasible_space; compress_data=compress_data)
 

@@ -14,84 +14,6 @@ struct FeasibleSpace
     feasibleSpace::Vector{DataFrame}
 end
 
-function addkey!(membernames, nam)::Symbol
-    if !haskey(membernames, nam)
-        membernames[nam] = gensym()
-    end
-    membernames[nam]
-end
-
-onearg(e, f) = e.head == :call && length(e.args) == 2 && e.args[1] == f
-mapexpr(f, e) = Expr(e.head, map(f, e.args)...)
-
-# function replace_dotted!(e, membernames, orig_instance)
-#     if e.args[1] ∈ (QuoteNode(:cf), QuoteNode(:x_cf), QuoteNode(:counterfactual))
-#         return replace_syms!(e.args[2], membernames, orig_instance)
-#     elseif e.args[1] ∈ (QuoteNode(:x), QuoteNode(:inst), QuoteNode(:instance))
-#         return orig_instance[e.args[2].value]
-#     else
-#         @error "The tuple identifier should be one of (cf, x_cf, counterfactual) or (x, inst, instance), we got $(e.args[1])"
-#     end
-# end
-
-####
-# TODO: FIXME: Add support for IF statements
-####
-replace_syms!(x, membernames, orig_instance) = x
-replace_syms!(q::QuoteNode, membernames, orig_instance) = replace_syms!(Meta.quot(q.value), membernames, orig_instance)
-
-function replace_syms!(e::Expr, membernames, orig_instance)
-    # if onearg(e, :^)
-    #     e.args[2]
-    # elseif onearg(e, :cols)
-    #     addkey!(membernames, :($(e.args[2])))
-    if e.head == :quote
-        addkey!(membernames, Meta.quot(e.args[1]) )
-    elseif e.head == :.
-        if e.args[1] ∈ (QuoteNode(:cf), QuoteNode(:x_cf), QuoteNode(:counterfactual))
-            return replace_syms!(e.args[2], membernames, orig_instance)
-        elseif e.args[1] ∈ (QuoteNode(:x), QuoteNode(:inst), QuoteNode(:instance))
-            return orig_instance[e.args[2].value]
-        else
-            @error "The tuple identifier should be one of (cf, x_cf, counterfactual) or (x, inst, instance), we got $(e.args[1])"
-        end
-    else
-        e2 = mapexpr(x -> replace_syms!(x, membernames, orig_instance), e)
-    end
-end
-
-function make_source_concrete(x::AbstractVector)
-    if isempty(x) || isconcretetype(eltype(x))
-        return x
-    elseif all(t -> t isa Union{AbstractString, Symbol}, x)
-        return Symbol.(x)
-    else
-        throw(ArgumentError("Column references must be either all the same " *
-                            "type or a a combination of `Symbol`s and strings"))
-    end
-end
-
-function ground(constraints::Vector{Expr}, orig_instance::DataFrameRow)
-    grounded_constraints = Pair{Vector{Symbol}, Any}[]
-
-    for kw in constraints
-        membernames = Dict{Any, Symbol}()
-
-        body::Expr = replace_syms!(kw, membernames, orig_instance)
-        source::Expr = Expr(:vect, keys(membernames)...)
-        inputargs::Expr = Expr(:tuple, values(membernames)...)
-
-        generated_func = quote
-            GeCo.make_source_concrete($(source)) => $inputargs -> $body
-        end
-
-        push!(grounded_constraints, runtime_eval(generated_func))
-    end
-
-    return grounded_constraints
-end
-
-
 function initGroups(prog::PLAFProgram, data::DataFrame)
 
     #feature_list = Array{Feature,1}()
@@ -169,7 +91,7 @@ end
 function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFProgram;
     domains::Vector{DataFrame}=Vector{DataFrame}())::FeasibleSpace
 
-    constraints = ground(prog.constraints,orig_instance)
+    constraints = prog.constraints
 
     groups = initGroups(prog,data)
     ranges = Dict(feature => Float64(maximum(col)-minimum(col)) for (feature, col) in pairs(eachcol(data)))
@@ -195,6 +117,7 @@ function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFP
                 @assert !satisfied_constraints[cidx]
 
                 # Compute constraints on this group
+                constraint = constraint[1] => constraint[2](orig_instance)
                 filter!(constraint, fspace)
                 satisfied_constraints[cidx] = true
             end

@@ -18,16 +18,16 @@ const ACTIVATIONS = Dict(
 )
 
 struct PartialMLPEval
-    orig_entity::Vector{Float64}
+    orig_instance::Vector{Float64}
     coefs::Vector{Array{Float64,2}}
     intercepts::Vector{Vector{Float64}}
     activation::String
     partial_cache::Dict{BitVector,Array{Float64,2}}
 end
 
-initMLPEval(classifier, orig_entity) =
+initMLPEval(classifier, orig_instance) =
     PartialMLPEval(
-        collect(Float64,orig_entity),
+        collect(Float64,orig_instance),
         classifier.coefs_, classifier.intercepts_, classifier.activation,
         Dict{BitVector,Array{Float64,1}}())
 
@@ -41,7 +41,7 @@ initMLPEval(classifier, orig_entity) =
             clf.partial_cache[mod]
         else
             nmod = .!mod
-            mtx = clf.orig_entity[nmod]' * clf.coefs[1][nmod,:] + clf.intercepts[1]'
+            mtx = clf.orig_instance[nmod]' * clf.coefs[1][nmod,:] + clf.intercepts[1]'
             clf.partial_cache[mod] = convert(Array{Float64,2}, mtx)
         end, inner = (nrow(df),1))
         num_layer = length(clf.coefs)
@@ -92,7 +92,7 @@ end
         clf.partial_cache[mod]
     else
         nmod = .!mod
-        mtx = clf.orig_entity[nmod]' * clf.coefs[1][nmod,:] + clf.intercepts[1]'
+        mtx = clf.orig_instance[nmod]' * clf.coefs[1][nmod,:] + clf.intercepts[1]'
         clf.partial_cache[mod] = convert(Array{Float64,2}, mtx)
     end, inner = (nrow(df),1))
     # println(matrix)

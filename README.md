@@ -36,7 +36,7 @@ The explain function accepts the following optional keyword parameters:
 
 To print out the proposed actions for the top counterfactuals run:
 ```Julia
-actions(explanation, orig_entity)
+actions(explanation, orig_instance)
 ```
 
 If you would like to precompute the domains run:

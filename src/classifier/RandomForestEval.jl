@@ -19,7 +19,7 @@ struct RandomForestEval{S,T,VSIZE,MSIZE,USIZE,NSIZE}
     rsensemble::RapidScorer.RSEnsemble{S,T,VSIZE,MSIZE,USIZE,NSIZE}
     qsensemble::QuickScorer.QSEnsemble{S,T}
     desired_value::T
-    orig_entity::Vector{Float64}
+    orig_instance::Vector{Float64}
 end
 
 # TODO add WSIZE
@@ -28,14 +28,14 @@ struct PartialRandomForestEval{S,T,VSIZE,MSIZE,USIZE,NSIZE,WSIZE}
     qsensemble::QuickScorer.QSEnsemble{S,T,WSIZE}
     desired_value::T
     partial_cache::Dict{BitVector, QuickScorer.PartialQSEnsemble{S, T}}
-    orig_entity::Vector{Float64}
+    orig_instance::Vector{Float64}
 end
 
-initPartialRandomForestEval(classifier, orig_entity, desired_class) = begin
+initPartialRandomForestEval(classifier, orig_instance, desired_class) = begin
     # lambda = nextpow(2, maximum(RapidScorer.calcleafcnt.(ensemble.trees)))
     ensemble = classifier.fitresult[1]
     lambda = 64
-    num_feat = size(orig_entity, 1)
+    num_feat = size(orig_instance, 1)
 
     desired_class_value = classifier.fitresult[3][findfirst(isequal(desired_class), classifier.fitresult[2])]
 
@@ -47,12 +47,12 @@ initPartialRandomForestEval(classifier, orig_entity, desired_class) = begin
         qsensemble,
         desired_class_value,
         Dict{BitVector, QuickScorer.PartialQSEnsemble{Float64, UInt32}}(),
-        collect(Float64, orig_entity))
+        collect(Float64, orig_instance))
 end
 
-initRandomForestEval(classifier, orig_entity, desired_class) = begin
+initRandomForestEval(classifier, orig_instance, desired_class) = begin
     ensemble = classifier.fitresult[1]
-    num_feat = size(orig_entity, 1)
+    num_feat = size(orig_instance, 1)
 
     desired_class_value = classifier.fitresult[3][findfirst(isequal(desired_class), classifier.fitresult[2])]
 
@@ -63,12 +63,12 @@ initRandomForestEval(classifier, orig_entity, desired_class) = begin
         rsensemble,
         qsensemble,
         desired_class_value,
-        collect(Float64, orig_entity))
+        collect(Float64, orig_instance))
 end
 
 # column style, partial entity, partial q/rs
 @inline function predict(ensemble::PartialRandomForestEval, df::DataFrame, mod::BitVector)
-    # orig_entity_df = manager.orig_entity_df
+    # orig_instance_df = manager.orig_instance_df
     # max_num_entity = 0
     # for (mod, entities) in manager.dict
     #     max_num_entity = max(nrow(entities), max_num_entity)
@@ -81,10 +81,10 @@ end
         qsensemble = ensemble.qsensemble
 
         desired_class_value =  ensemble.desired_value
-        orig_entity = ensemble.orig_entity
+        orig_instance = ensemble.orig_instance
 
         qs_changing_set = [i for (i, b) in enumerate(mod) if b]
-        ensemble.partial_cache[mod] = QuickScorer.PartialQSEnsemble(qsensemble, orig_entity, qs_changing_set, desired_class = desired_class_value)
+        ensemble.partial_cache[mod] = QuickScorer.PartialQSEnsemble(qsensemble, orig_instance, qs_changing_set, desired_class = desired_class_value)
     end
 
     pred::Vector{Float64} = QuickScorer.eval_partial_ensemble(partialqsensemble, df)
@@ -97,7 +97,7 @@ end
     cache = ensemble.partial_cache
     rsensemble = ensemble.rsensemble
     qsensemble = ensemble.qsensemble
-    orig_entity = ensemble.orig_entity
+    orig_instance = ensemble.orig_instance
     # fitresult = ensemble.fitresult
     desired_class_value = ensemble.desired_value
 
@@ -106,8 +106,8 @@ end
     insertcols!(population, :pred => 0.)
     insertcols!(population, :orig_ref => 1:nrows(population))
     # lazy update
-    # template_feats = collect(Float64, orig_entity[1:num_feat])
-    template_feats = copy(orig_entity)
+    # template_feats = collect(Float64, orig_instance[1:num_feat])
+    template_feats = copy(orig_instance)
     compressed_feats = Vector{Float64}(undef, size(population, 1) * num_feat)
 
     # we use the internal representation (possibly compressed, etc.) of the desired_class
@@ -174,7 +174,7 @@ end
                     i += 1
                 end
             end
-            for i=1:num_feat; if changing_set[i]; template_feats[i] = orig_entity[i]; end; end
+            for i=1:num_feat; if changing_set[i]; template_feats[i] = orig_instance[i]; end; end
         end
     end
     pred::Vector{Float64} = population[!, :pred]
@@ -194,7 +194,7 @@ end
 @inline function predict(ensemble::RandomForestEval, df::DataFrame, _dummy) # to make it currently unused
     rsensemble = ensemble.rsensemble
     qsensemble = ensemble.qsensemble
-    orig_entity = ensemble.orig_entity
+    orig_instance = ensemble.orig_instance
     desired_class_value = ensemble.desired_value
 
     # Group the entities by their mod     # TODO: why are we grouping the entities?
@@ -208,8 +208,8 @@ end
     entities::Array{Float64,2} = MLJ.matrix(df[!,1:end-3])
 
     # Lazy update
-    # template_feats = collect(Float64, orig_entity[1:num_feat])
-    template_feats = copy(orig_entity)
+    # template_feats = collect(Float64, orig_instance[1:num_feat])
+    template_feats = copy(orig_instance)
     compressed_feats = Vector{Float64}(undef, size(df, 1) * num_feat)
     real_to_compressed_feats_map = [i for i = 1:num_feat]
 

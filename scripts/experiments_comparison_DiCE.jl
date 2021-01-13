@@ -5,18 +5,18 @@ using Printf
 import Dates, JLD
 
 
-function eval2(counterfactual, orig_entity)
+function eval2(counterfactual, orig_instance)
     dis = 0
     num = 0
     for i in [[0], [1], [2,3,4,5],[6,7,8,9,10,11,12,13],[14,15,16,17,18],[19,20,21,22,23,24],[25,26],[27,28]]
         if (length(i) == 1 )
-            if (counterfactual[i[1]+1] != orig_entity[i[1]+1])
-                dis += abs(counterfactual[i[1]+1] - orig_entity[i[1]+1])
+            if (counterfactual[i[1]+1] != orig_instance[i[1]+1])
+                dis += abs(counterfactual[i[1]+1] - orig_instance[i[1]+1])
                 num += 1
             end
         else
             for index in i
-                if counterfactual[index+1] != orig_entity[index+1]
+                if counterfactual[index+1] != orig_instance[index+1]
                     num += 1
                     dis += 1
 
@@ -85,10 +85,10 @@ function runDiceExperiment(dataset::String, desired_class::Int64)
                 if predictions[i] != desired_class
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
-                    orig_entity = X[i, :]
-                    time = @elapsed (explanation, count, generation, rep_size) = explain(orig_entity, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, compress_data=compress)
+                    orig_instance = X[i, :]
+                    time = @elapsed (explanation, count, generation, rep_size) = explain(orig_instance, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, compress_data=compress)
 
-                    (dis, num) = eval2(explanation[1,:], orig_entity)
+                    (dis, num) = eval2(explanation[1,:], orig_instance)
 
                     ## We only consider the top-explanation for this
                     push!(correct_outcome, explanation[1,:outc])
@@ -127,9 +127,9 @@ end
 #     distances = Array{Float64,1}()
 #     times = Array{Float64,1}()
 #     for i in 1:500
-#         orig_entity = X[i, :]
-#         time = @elapsed explanation = explain(orig_entity, X, path, classifier; desired_class = 1)
-#         (dis, num) = eval2(explanation[1,:], orig_entity)
+#         orig_instance = X[i, :]
+#         time = @elapsed explanation = explain(orig_instance, X, path, classifier; desired_class = 1)
+#         (dis, num) = eval2(explanation[1,:], orig_instance)
 #         push!(num_changed, num)
 #         push!(times, time)
 #         push!(distances, dis)

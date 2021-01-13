@@ -1,14 +1,14 @@
 
 
 ## Selection operator which finds the top-k CF entities
-function selection!(population::DataFrame, k::Int64, orig_entity::DataFrameRow, feasible_space::FeasibleSpace, classifier, desired_class;
+function selection!(population::DataFrame, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
     distance_temp::Vector{Float64}=Vector{Float64}())
 
     preds = score(classifier, population, desired_class)
 
-    dist = distance(population, orig_entity, feasible_space.num_features, feasible_space.ranges;
+    dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
         distance_temp=distance_temp, norm_ratio=norm_ratio)
 
     for i in 1:nrow(population)
@@ -35,7 +35,7 @@ end
 predict(classifier::PartialRandomForestEval,entities,mod) = RandomForestEvaluation.predict(classifier,entities,mod)
 predict(classifier::PartialMLPEval,entities,mod) = MLPEvaluation.predict(classifier,entities[:,1:end-NUM_EXTRA_COL+1],mod) # plus one because `mod` field is not in the DataManager entities
 
-function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, feasible_space::FeasibleSpace, classifier::Union{PartialRandomForestEval, PartialMLPEval}, desired_class;
+function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier::Union{PartialRandomForestEval, PartialMLPEval}, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
     distance_temp::Vector{Float64}=Vector{Float64}())
@@ -47,7 +47,7 @@ function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, f
     for (mod, entities) in manager.dict
         pred::Vector{Float64} = vec(predict(classifier, entities, mod))
 
-        dist = distance(population, orig_entity, feasible_space.num_features, feasible_space.ranges;
+        dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
             distance_temp=distance_temp, norm_ratio=norm_ratio)
 
         entities.outc = pred .> 0.5
@@ -90,14 +90,14 @@ function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, f
     return converged
 end
 
-function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, feasible_space::FeasibleSpace, classifier::Union{MLJ.Machine, PyCall.PyObject}, desired_class;
+function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier::Union{MLJ.Machine, PyCall.PyObject}, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
     distance_temp::Vector{Float64}=Vector{Float64}(undef,100))
 
     df = materialize(manager)
 
-    res = selection!(df, k, orig_entity, feasible_space, classifier, desired_class;
+    res = selection!(df, k, orig_instance, feasible_space, classifier, desired_class;
         norm_ratio = norm_ratio, convergence_k = convergence_k, distance_temp = distance_temp)
 
     empty!(manager)

@@ -1,5 +1,5 @@
 ## Generates the initial population
-function initialPopulation(orig_entity, feasible_space; compress_data::Bool=false)
+function initialPopulation(orig_instance, feasible_space; compress_data::Bool=false)
 
     groups = feasible_space.groups
     num_features = feasible_space.num_features
@@ -7,10 +7,10 @@ function initialPopulation(orig_entity, feasible_space; compress_data::Bool=fals
     max_num_samples = 20
     num_rows = length(groups) * max_num_samples
 
-    initial_pop = DataFrame(orig_entity)
+    initial_pop = DataFrame(orig_instance)
 
     if compress_data
-        initial_pop = initializeManager(orig_entity; extended=true)
+        initial_pop = initializeManager(orig_instance; extended=true)
     else
         repeat!(initial_pop, num_rows)
         insertcols!(initial_pop,

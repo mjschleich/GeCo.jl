@@ -40,7 +40,7 @@ mlj_classifier = machine(tree_model, X, y)
 # train
 MLJ.fit!(mlj_classifier, rows=train)
 
-orig_entity = X[14, :]
+orig_instance = X[14, :]
 
-classifier = initPartialRandomForestEval(mlj_classifier, orig_entity, 1);
-full_classifier = initRandomForestEval(mlj_classifier, orig_entity, 1);
+classifier = initPartialRandomForestEval(mlj_classifier, orig_instance, 1);
+full_classifier = initRandomForestEval(mlj_classifier, orig_instance, 1);

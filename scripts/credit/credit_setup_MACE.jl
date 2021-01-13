@@ -35,6 +35,6 @@ pickle = pyimport("pickle")
 classifier = pickle.load(pybuiltin("open")("scripts/mace_models/credit_model.pickle","rb"))
 # classifier.tree_.__getstate__()
 
-orig_entity = X[110, :]
+orig_instance = X[110, :]
 
 include("credit_constraints_MACE.jl")

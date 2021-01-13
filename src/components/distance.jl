@@ -2,7 +2,7 @@
 
 @inline absolute(val, orig_val, range)::Float64 = abs(val - orig_val) / range
 
-function distance(df::DataFrame, orig_entity::DataFrameRow, num_features::Int64, featureRanges::Dict{Symbol, Float64};
+function distance(df::DataFrame, orig_instance::DataFrameRow, num_features::Int64, featureRanges::Dict{Symbol, Float64};
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     distance_temp::Array{Float64,1}=zeros(Float64, 4*nrow(df)))::Array{Float64,1}
 
@@ -23,7 +23,7 @@ function distance(df::DataFrame, orig_entity::DataFrameRow, num_features::Int64,
 
         if elscitype(col) != Multiclass     # Feature is not categorical
 
-            orig_val::Float64 = orig_entity[feature]
+            orig_val::Float64 = orig_instance[feature]
             range = featureRanges[feature]
 
             row_index = 0
@@ -39,7 +39,7 @@ function distance(df::DataFrame, orig_entity::DataFrameRow, num_features::Int64,
                 row_index += 4
             end
         else
-            orig_categ_val::Int64 = orig_entity[feature]
+            orig_categ_val::Int64 = orig_instance[feature]
 
             row_index = 0
             for val in col
@@ -60,12 +60,12 @@ function distance(df::DataFrame, orig_entity::DataFrameRow, num_features::Int64,
         norm_ratio[1] * (distance_temp[(row * 4) + 1] / num_features) +
         norm_ratio[2] * (distance_temp[(row * 4) + 2] / num_features) +
         norm_ratio[3] * (sqrt(distance_temp[(row * 4) + 3] / num_features))  +
-        norm_ratio[4] * distance_temp[(row * 4) + 4]
+        norm_ratio[4] * distance_temp[(row * 4) + 4] / num_features
         for row in 0:(nrow(df)-1)
     ]
 end
 
-function distance(row::DataFrameRow, orig_entity::DataFrameRow, num_features::Int64, featureRanges::Dict{Symbol, Float64};
+function distance(row::DataFrameRow, orig_instance::DataFrameRow, num_features::Int64, featureRanges::Dict{Symbol, Float64};
     norm_ratio::Array{Float64,1}=default_norm_ratio)::Float64
 
     dist = zeros(Float64, 4)
@@ -82,14 +82,14 @@ function distance(row::DataFrameRow, orig_entity::DataFrameRow, num_features::In
                 featureRanges[feature] = range
             end
 
-            diff = abs(orig_entity[feature] - val) / range   ## TODO: Check for type consistentcy here
+            diff = abs(orig_instance[feature] - val) / range   ## TODO: Check for type consistentcy here
 
             dist[1] += (diff != 0.0)       ## zero norm
             dist[2] += diff                ## one norm
             dist[3] += diff * diff         ## two norm
             dist[4] = max(dist[4], diff)   ## inf norm
         else
-            diff = (orig_entity[feature] != val)
+            diff = (orig_instance[feature] != val)
 
             dist[1] += diff                ## zero norm
             dist[2] += diff                ## one norm

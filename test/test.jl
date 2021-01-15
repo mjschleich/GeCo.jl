@@ -17,40 +17,106 @@ include("../scripts/credit/credit_setup_MACE.jl");
 
     # simple test that the distance of the same entity shuold be 0
     @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == [0.0]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == 0.0
 
     ## simple test of change one categorical feature for both distance functions 
     test_entity[1, "isMale"] = 1 - test_entity[1, "isMale"]
     #for l0 norm
     @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l0_norm) == [1.0/feasible_space.num_features]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l0_norm) == 1.0/feasible_space.num_features
     # for l1 norm
     @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm) == [1.0/feasible_space.num_features]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm) == 1.0/feasible_space.num_features
     # for l2 norm
     @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l2_norm) == [sqrt(1.0/feasible_space.num_features)]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l2_norm) == sqrt(1.0/feasible_space.num_features)
     #for combined norm
-    @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == [1.0/feasible_space.num_features*3/4 + sqrt(1.0/feasible_space.num_features)/4 ]
+    @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == [1.0/feasible_space.num_features/2 + sqrt(1.0/feasible_space.num_features)/4+1/4]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == 1.0/feasible_space.num_features/2 + sqrt(1.0/feasible_space.num_features)/4+1/4
     test_entity[1, "isMale"] = 1 - test_entity[1, "isMale"]
 
     # ## simple test of change one Continuous feature for both distance functions 
     test_entity[1, "MaxBillAmountOverLast6Months"] += 10
     #for l0 norm
     @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l0_norm) == [1/feasible_space.num_features]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l0_norm) == 1/feasible_space.num_features
      # for l1 norm
     @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm) == [10.0/50810/feasible_space.num_features]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm) == 10.0/50810/feasible_space.num_features
     #for combined norm
-    @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == [1.0/feasible_space.num_features/4 + 10.0/50810/feasible_space.num_features/2 + sqrt(10.0/50810*10.0/50810/feasible_space.num_features)/4 ]
+    @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == [1.0/feasible_space.num_features/4 + 10.0/50810/feasible_space.num_features/4+10.0/50810/4 + sqrt(10.0/50810*10.0/50810/feasible_space.num_features)/4 ]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == 1.0/feasible_space.num_features/4 + 10.0/50810/feasible_space.num_features/4+10.0/50810/4 + sqrt(10.0/50810*10.0/50810/feasible_space.num_features)/4
     test_entity[1, "MaxBillAmountOverLast6Months"] -= 10
 
-    # ## simple test of changing several categorical (2) and Continuous (2) features
+    ### simple test of changing several categorical (2) and Continuous (2) features
     test_entity[1, "isMale"] = 1 - test_entity[1, "isMale"]
     test_entity[1, "isMarried"] = 1 - test_entity[1, "isMarried"]
     test_entity[1, "MaxBillAmountOverLast6Months"] += 10
     test_entity[1, "EducationLevel"] += 2
     #for l0 norm
     @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l0_norm) == [4/feasible_space.num_features]
-   # for l1 norm
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l0_norm) == 4/feasible_space.num_features
+    # for l1 norm
     @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm) == [(2+2/3+10.0/50810)/feasible_space.num_features]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm) == (2+2/3+10.0/50810)/feasible_space.num_features
     #for combined norm
-    @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == [4.0/feasible_space.num_features/4 + (2+2/3+10.0/50810)/feasible_space.num_features/4 + sqrt((2+2*2/3/3+10.0/50810*10.0/50810)/feasible_space.num_features)/4 + 1.0/feasible_space.num_features/4]
+    @test distance(test_entity, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == [4.0/feasible_space.num_features/4 + (2+2/3+10.0/50810)/feasible_space.num_features/4 + sqrt((2+2*2/3/3+10.0/50810*10.0/50810)/feasible_space.num_features)/4 + 1.0/4]
+    @test distance(test_entity[1,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm) == 4.0/feasible_space.num_features/4 + (2+2/3+10.0/50810)/feasible_space.num_features/4 + sqrt((2+2*2/3/3+10.0/50810*10.0/50810)/feasible_space.num_features)/4 + 1.0/4
+
+
+    ### large tests mainly check whether the two measures return the same result
+
+    ## check for all entities compare with the first entity (labeled as good)
+    #for l1 norm
+    single_distance_result = Array{Float64,1}(undef, size(X,1))
+    combined_distance_result = distance(X, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm)
+    for index in 1:size(X,1)
+        single_distance_result[index] = distance(X[index,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm)
+        single_distance_result[index] = floor(single_distance_result[index]*10000000000)/10000000000.0
+        combined_distance_result[index] = floor(combined_distance_result[index]*10000000000)/10000000000.0
+        # if single_distance_result[index] != combined_distance_result[index]
+        #     println("$index: $(single_distance_result[index]) with $(combined_distance_result[index])" )
+        # end
+    end
+    @test combined_distance_result== single_distance_result
+    # for combined norm
+    combined_distance_result = distance(X, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm)
+    for index in 1:size(X,1)
+        single_distance_result[index] = distance(X[index,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm)
+        single_distance_result[index] = floor(single_distance_result[index]*10000000000)/10000000000.0
+        combined_distance_result[index] = floor(combined_distance_result[index]*10000000000)/10000000000.0
+        # if single_distance_result[index] != combined_distance_result[index]
+        #     println("$index: $(single_distance_result[index]) with $(combined_distance_result[index])" )
+        # end
+    end
+    @test combined_distance_result== single_distance_result
+
+
+    ## check for all entities compare with the 14 entity (labeled as bad)
+    orig_entity = X[14,:]
+    #for l1 norm
+    combined_distance_result = distance(X, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm)
+    for index in 1:size(X,1)
+        single_distance_result[index] = distance(X[index,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = l1_norm)
+        single_distance_result[index] = floor(single_distance_result[index]*10000000000)/10000000000.0
+        combined_distance_result[index] = floor(combined_distance_result[index]*10000000000)/10000000000.0
+        # if single_distance_result[index] != combined_distance_result[index]
+        #     println("$index: $(single_distance_result[index]) with $(combined_distance_result[index])" )
+        # end
+    end
+    @test combined_distance_result== single_distance_result
+    # for combined norm
+    combined_distance_result = distance(X, orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm)
+    for index in 1:size(X,1)
+        single_distance_result[index] = distance(X[index,:], orig_instance, feasible_space.num_features, feasible_space.ranges; norm_ratio = combined_norm)
+        single_distance_result[index] = floor(single_distance_result[index]*10000000000)/10000000000.0
+        combined_distance_result[index] = floor(combined_distance_result[index]*10000000000)/10000000000.0
+        # if single_distance_result[index] != combined_distance_result[index]
+        #     println("$index: $(single_distance_result[index]) with $(combined_distance_result[index])" )
+        # end
+    end
+    @test combined_distance_result== single_distance_result
+    
 end;
 
 # each feature in exactly one of groups

@@ -8,12 +8,8 @@ import ScikitLearn, JSON, StatsBase, MLJ
 const default_norm_ratio = [0.25, 0.25, 0.25, 0.25]
 
 const NUM_EXTRA_COL = 4
-const extra_col = [:score, :outc, :estcf, :mod]
+const EXTRA_COLS = [:score, :outc, :estcf, :mod]
 const NUM_EXTRA_FEASIBLE_SPACE_COL = 2
-
-# Implements the struct for features and feature groups, as well as the methods to initializeFeatures
-# include("utils/FeatureStruct.jl")
-# export FeatureGroup
 
 # Implements the struct for features and feature groups, as well as the methods to initializeFeatures
 include("components/plaf.jl")
@@ -241,9 +237,10 @@ function actions(counterfactuals::DataManager, orig_instance; num_actions = 5)
     end
 end
 
+
+## TODO: move this to test
 function testExplanations(explanations, orig_instance)
     for (row, explanation) in enumerate(eachrow(explanations))
-
         for (i,f) in enumerate(eachindex(explanation[1:end-3]))
             if explanation.mod[i] && explanation[f] == orig_instance[f]
                 println("In Row $row: $(explanation[f]) == $(orig_instance[f]) for $f")

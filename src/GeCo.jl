@@ -242,15 +242,6 @@ function actions(counterfactuals::DataManager, orig_instance; num_actions = 5)
     end
 end
 
-function testExplanations(explanations, orig_instance)
-    for (row, explanation) in enumerate(eachrow(explanations))
 
-        for (i,f) in enumerate(eachindex(explanation[1:end-3]))
-            if explanation.mod[i] && explanation[f] == orig_instance[f]
-                println("In Row $row: $(explanation[f]) == $(orig_instance[f]) for $f")
-            end
-        end
-    end
-end
 
 end

@@ -199,3 +199,21 @@ end
         end
     end
 end
+
+
+@testset "Explanation Test" begin
+    
+    explanations,  = @time explain(orig_instance, X, p, classifier)
+    
+    for (row, explanation) in enumerate(eachrow(explanations))
+
+        for (i,f) in enumerate(eachindex(explanation[1:end-3]))
+            if i > 14
+                continue
+            end
+            @test !(explanation.mod[i] && explanation[f] == orig_instance[f])
+
+        end
+    end
+    
+end

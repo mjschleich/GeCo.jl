@@ -19,6 +19,10 @@ export @PLAF, @GROUP, PLAFProgram, initPLAF
 include("components/feasibleSpace.jl")
 export feasibleSpace, initDomains, ground, FeatureGroup, applyConstraint, initGroups
 
+# Implements the struct for features and feature groups, as well as the methods to initializeFeatures
+include("components/actionCascade.jl")
+export GroundedImplication, actionCascade
+
 # Implementation of the Δ-representation
 include("dataManager/DataManager.jl")
 export materialize, DataManager
@@ -122,7 +126,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             "Number of generations:               $(generation)")
 
     elseif !ablation
-        
+
         feasible_space = @time feasibleSpace(data, orig_instance, program; domains=domains)
         population = initialPopulation(orig_instance, feasible_space; compress_data=compress_data)
 

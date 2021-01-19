@@ -140,16 +140,80 @@ end;
 end
 
 @testset "Feasible Test" begin
-    # for the credit data set, check whether the results follow the constraints
-    explanation,  = @time explain(orig_instance, X, p, classifier)
-    for i in 1:size(explanation,1)
-        ## for each entity check whether "isMale" and "isMarried" not changed and "HasHistoryOfOverduePayments" only INCREASING
-        @test (explanation[i, "isMale"]  == orig_instance["isMale"]) & (explanation[i, "isMarried"]  == orig_instance["isMarried"]) & (explanation[i, "HasHistoryOfOverduePayments"]  >= orig_instance["HasHistoryOfOverduePayments"])
+    @testset "result feasible test" begin
+        # for the credit data set, check whether the results follow the constraints
+        explanation,  = @time explain(orig_instance, X, p, classifier)
+        for i in 1:size(explanation,1)
+            ## for each entity check whether "isMale" and "isMarried" not changed and "HasHistoryOfOverduePayments" only INCREASING
+            @test (explanation[i, "isMale"]  == orig_instance["isMale"]) & (explanation[i, "isMarried"]  == orig_instance["isMarried"]) & (explanation[i, "HasHistoryOfOverduePayments"]  >= orig_instance["HasHistoryOfOverduePayments"])
+        end
     end
 
-    # test on the feasible space compute
+    @testset "feasible space test" begin
+        # test on the feasible space compute
+        # constrains: isMale is at index 1, isMarried is at index 2, 
+        # EducationLevel is at index 4, HasHistoryOfOverduePayments at index 14
+        for i in 1:100
+            test_entity = X[i, :]
+            feasible_space = feasibleSpace(X, test_entity, p)
+            # isMale and isMarried is inchangeable, we the fs should be empty
+            @test size(feasible_space.feasibleSpace[1])[1] == 0
+            @test size(feasible_space.feasibleSpace[2])[1] == 0
 
-    # with delta representation (compress data)
+            # EducationLevel and HasHistoryOfOverduePayments is mono incr
+            for education_level in eachrow(feasible_space.feasibleSpace[4])
+                @test education_level["EducationLevel"] > test_entity["EducationLevel"]
+            end
+
+            for education_level in eachrow(feasible_space.feasibleSpace[14])
+                @test education_level["HasHistoryOfOverduePayments"] > test_entity["HasHistoryOfOverduePayments"]
+            end
+        end
+    end
+        
 
     # manually call the init => check feasible and only one feature group changed
+    @testset "initial population test" begin
+        for i in 1:100
+            test_entity = X[i, :]
+            feasible_space = feasibleSpace(X, test_entity, p)
+            init_population = @time initialPopulation(test_entity, feasible_space)
+            
+            for entity in eachrow(init_population)
+                num_change = 0
+                for feature_group in feasible_space.groups
+                    changed = false
+                    for feature in feature_group.names
+                        if (entity[feature] != test_entity[feature])
+                            changed = true
+                        end
+                    end
+                    if (changed)
+                        num_change += 1
+                    end
+                end
+                @test num_change == 1
+                @test entity["isMale"] == test_entity["isMale"] && entity["isMarried"] == test_entity["isMarried"] &&
+                    entity["EducationLevel"] >= test_entity["isMale"] && entity["HasHistoryOfOverduePayments"] >= test_entity["HasHistoryOfOverduePayments"]
+            end
+        end
+    end
+end
+
+
+@testset "Explanation Test" begin
+    
+    explanations,  = @time explain(orig_instance, X, p, classifier)
+    
+    for (row, explanation) in enumerate(eachrow(explanations))
+
+        for (i,f) in enumerate(eachindex(explanation[1:end-3]))
+            if i > 14
+                continue
+            end
+            @test !(explanation.mod[i] && explanation[f] == orig_instance[f])
+
+        end
+    end
+    
 end

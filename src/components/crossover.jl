@@ -69,6 +69,10 @@ function crossover!(population::DataFrame, orig_instance::DataFrameRow, feasible
                     c[group.names] = parent2[group.names]
                 end
             end
+
+            valid_action = actionCascade(c, feasible_space.implications)
+            !valid_action && @error("Crossover: We found an invalid action! $(c)")
+
             push!(population, c)
         end
     end

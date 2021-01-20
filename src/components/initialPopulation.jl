@@ -43,7 +43,10 @@ function initialPopulation(orig_instance, feasible_space; compress_data::Bool=fa
                 end
             end
             for s in 1:num_samples
-                initial_pop[row_index+s, :mod] .|= group.indexes   ## TODO: FIXME: Check this
+                initial_pop[row_index+s, :mod] .|= group.indexes
+
+                valid_action = actionCascade(initial_pop[row_index+s, :], feasible_space.implications)
+                !valid_action && @error("Initial Population: We found an invalid action in row $(row_index+s)! ")
             end
         end
         row_index += num_samples

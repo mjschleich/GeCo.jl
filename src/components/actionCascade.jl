@@ -5,11 +5,10 @@ function actionCascade(instance::DataFrameRow, implications::Vector{GroundedImpl
     validAction = true
     for implication in implications
 
-        ## TODO: we need to check the body of the if conditon is not already satisfied
-        if any(instance[:mod] .& implication.condFeatures) && implication.condition(instance)
-            println("HERE ... ")
+        ## TODO: Do we need to include: any(instance[:mod] .& implication.condFeatures) in the if statement?
+        if  implication.condition(instance)
 
-            ## Assumption: There may be only a single feature group that we need to change
+            ## Assumption: There is only a single feature group that we need to change
             fspace = implication.sampleSpace
 
             isempty(fspace) && (validAction = false; break)
@@ -17,14 +16,8 @@ function actionCascade(instance::DataFrameRow, implications::Vector{GroundedImpl
             sampled_row = StatsBase.sample(1:nrow(fspace), StatsBase.FrequencyWeights(fspace.count))
             features = implication.conseqFeatures
 
-            println("Replacing value of instance with: ", fspace[sampled_row, features])
             instance[features] = fspace[sampled_row, features]
-
-            !validAction && break;
-            # instance[:mod] .|= constraint.changedFeatures
-
-        else
-            println("All constraints satisfied ...")
+            instance[:mod] .|= implication.conseqFeaturesBitVec
         end
     end
 

@@ -1,4 +1,4 @@
-using GeneralizedGenerated, MLJScientificTypes
+using MLJScientificTypes
 
 struct FeatureGroup
     features::Tuple{Vararg{Symbol}}
@@ -7,12 +7,33 @@ struct FeatureGroup
     allCategorical::Bool
 end
 
+## Grounded Implications includes:
+# Feasible space
+# Condition
+# Consequence
+# Features in Condition / Consequence
+
+# Assumptions:
+# - consequence is only one comparison not several
+# - consequence is contained in one feature group
+# - constraints are always contained in one FeatureGroup
+
+struct GroundedImplication
+    condition::Function
+    sampleSpace::DataFrame
+    condFeatures::BitVector
+    conseqFeatures::Vector{Symbol}
+    conseqFeaturesBitVec::BitVector
+end
+
 struct FeasibleSpace
     groups::Vector{FeatureGroup}
     ranges::Dict{Symbol,Float64}
     num_features::Int64
     feasibleSpace::Vector{DataFrame}
+    implications::Vector{GroundedImplication}
 end
+
 
 function initGroups(prog::PLAFProgram, data::DataFrame)
 
@@ -87,13 +108,13 @@ function initDomains(groups::Vector{FeatureGroup}, data::DataFrame)::Vector{Data
 end
 
 
-
 function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFProgram;
     domains::Vector{DataFrame}=Vector{DataFrame}())::FeasibleSpace
 
     constraints = prog.constraints
+    implications = prog.implications
 
-    groups = initGroups(prog,data)
+    groups = initGroups(prog, data)
     ranges = Dict(feature => Float64(maximum(col)-minimum(col)) for (feature, col) in pairs(eachcol(data)))
     num_features = ncol(data)
 
@@ -113,12 +134,12 @@ function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFP
         fspace = filter(row -> row[features] != orig_instance[features], domains[gidx])
 
         for (cidx, constraint) in enumerate(constraints)
-            if constraint[1] ⊆ group.features
+            if constraint.features ⊆ group.features
                 @assert !satisfied_constraints[cidx]
 
                 # Compute constraints on this group
-                constraint = constraint[1] => constraint[2](orig_instance)
-                filter!(constraint, fspace)
+                constraint_pair = constraint.features => constraint.fun(orig_instance)
+                filter!(constraint_pair, fspace)
                 satisfied_constraints[cidx] = true
             end
         end
@@ -129,13 +150,33 @@ function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFP
 
     for (cidx, constraint) in enumerate(constraints)
         if !satisfied_constraints[cidx]
-            println("We have an extra constraint to columns: $(constraint[1])")
+            println("We have an extra constraint for columns: $(constraint[1])")
         end
     end
 
-    return FeasibleSpace(groups, ranges, num_features, feasible_space)
-end
+    groundedImplications = Vector{GroundedImplication}(undef, length(implications))
 
+    for (cidx, implication) in enumerate(implications)
+        ## Turn implication into a GroundedImplication
+
+        # Find feature group that contains the consequence features of the implication
+        conseq_gid = findfirst(x -> implication.conseqFeatures ⊆ x.features, groups)
+        cond_gid = findfirst(x -> implication.condFeatures ⊆ x.features, groups)
+
+        # Filter the corresponding feasible space to define the sample space
+        conseq_func = implication.conseqFeatures => implication.consequence(orig_instance)
+        fspace = filter(conseq_func, feasible_space[6])
+
+        groundedImplications[cidx] = GroundedImplication(
+            implication.condition(orig_instance),
+            fspace,
+            groups[cond_gid].indexes,
+            groups[conseq_gid].names,
+            groups[conseq_gid].indexes)
+    end
+
+    return FeasibleSpace(groups, ranges, num_features, feasible_space, groundedImplications)
+end
 
 
 

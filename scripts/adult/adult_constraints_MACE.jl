@@ -1,4 +1,4 @@
-p = initPLAF()
+p = PLAFProgram()
 
 # relationship_group = Tuple(s for s in propertynames(X) if contains(string(s), "Relationship"))
 @GROUP(p, Relationship_cat_0, Relationship_cat_1, Relationship_cat_2, Relationship_cat_3, Relationship_cat_4, Relationship_cat_5)
@@ -23,7 +23,7 @@ p = initPLAF()
     :cf.MaritalStatus_cat_3 .== :x.MaritalStatus_cat_3,
     :cf.MaritalStatus_cat_4 .== :x.MaritalStatus_cat_4,
     :cf.MaritalStatus_cat_5 .== :x.MaritalStatus_cat_5,
-    :cf.MaritalStatus_cat_6 .== :x.MaritalStatus_cat_6, )
+    :cf.MaritalStatus_cat_6 .== :x.MaritalStatus_cat_6)
 
 @PLAF(p, :cf.Relationship_cat_0 .== :x.Relationship_cat_0,
     :cf.Relationship_cat_1 .== :x.Relationship_cat_1,
@@ -31,3 +31,5 @@ p = initPLAF()
     :cf.Relationship_cat_3 .== :x.Relationship_cat_3,
     :cf.Relationship_cat_4 .== :x.Relationship_cat_4,
     :cf.Relationship_cat_5 .== :x.Relationship_cat_5)
+
+@PLAF(p, if :cf.EducationNumber .>= :x.EducationNumber; :cf.Age .>= :x.Age + 10 end )

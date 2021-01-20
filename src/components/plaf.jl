@@ -1,21 +1,50 @@
+struct Constraint
+    features::Array{Symbol, 1}
+    fun::Function
+end
+
+struct Implication
+    condition::Function
+    consequence::Function
+    condFeatures::Array{Symbol, 1}
+    conseqFeatures::Array{Symbol, 1}
+end
 
 struct PLAFProgram
     groups::Vector{Tuple{Vararg{Symbol}}}
-    constraints::Vector{Pair{Array{Symbol, 1}, Function}}
+    constraints::Vector{Constraint}
+    implications::Vector{Implication}
+    # constraints::Vector{Pair{Array{Symbol, 1}, Function}}
 end
 
-initPLAF() = PLAFProgram(Vector{Tuple}(), Vector{Expr}())
+PLAFProgram() = PLAFProgram(Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
+initPLAF() = PLAFProgram(Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
 
 Base.empty!(p::PLAFProgram) = begin
     empty!(p.groups)
     empty!(p.constraints)
+    empty!(p.implications)
     p
 end
 
+function Base.push!(p::PLAFProgram, constraint::Union{Constraint, Implication})
+    if constraint isa Constraint
+        push!(p.constraints, constraint)
+    else
+        push!(p.implications, constraint)
+    end
+    p
+end
+
+function Base.show(io::IO, p::PLAFProgram)
+    print(io, "PLAFProgram ($(length(p.constraints)) constraints, $(length(p.implications)) implications, $(length(p.groups)) groups)")
+end
+
 plaf_helper(x, t) = begin
-    constraints = quote $(ground.(t)...) end
+    constraints = ground.(t)
+
     quote
-        $push!($x.constraints, $constraints)
+        $push!($x, $(constraints...))
     end
 end
 
@@ -36,7 +65,7 @@ end
 
 function addkey!(membernames, nam)::Symbol
     if !haskey(membernames, nam)
-        membernames[nam] = gensym()
+            membernames[nam] = gensym()
     end
     membernames[nam]
 end
@@ -44,40 +73,33 @@ end
 onearg(e, f) = e.head == :call && length(e.args) == 2 && e.args[1] == f
 mapexpr(f, e) = Expr(e.head, map(f, e.args)...)
 
-# function replace_dotted!(e, membernames, orig_instance)
-#     if e.args[1] ∈ (QuoteNode(:cf), QuoteNode(:x_cf), QuoteNode(:counterfactual))
-#         return replace_syms!(e.args[2], membernames, orig_instance)
-#     elseif e.args[1] ∈ (QuoteNode(:x), QuoteNode(:inst), QuoteNode(:instance))
-#         return orig_instance[e.args[2].value]
-#     else
-#         @error "The tuple identifier should be one of (cf, x_cf, counterfactual) or (x, inst, instance), we got $(e.args[1])"
-#     end
-# end
 
-####
-# TODO: FIXME: Add support for IF statements
-####
-replace_syms!(x, membernames) = x
-replace_syms!(q::QuoteNode, membernames) = replace_syms!(Meta.quot(q.value), membernames)
+replace_syms!(x, membernames; implication=false) = x
+replace_syms!(q::QuoteNode, membernames; implication=false) = replace_syms!(Meta.quot(q.value), membernames; implication=implication)
 
-function replace_syms!(e::Expr, membernames)
-    # if onearg(e, :^)
-    #     e.args[2]
-    # elseif onearg(e, :cols)
-    #     addkey!(membernames, :($(e.args[2])))
+function replace_syms!(e::Expr, membernames; implication=false)
+
+    # println("replace_syms: ", e.head, " ==> ", e)
+
     if e.head == :quote
-        addkey!(membernames, Meta.quot(e.args[1]) )
+        # println("addkey: ", e.args[1], " ==> ", e)
+
+        if !implication
+            return addkey!(membernames, Meta.quot(e.args[1]))
+        else
+            membernames[Meta.quot(e.args[1])] = e.args[1]
+            return quote __instance.$(e.args[1]) end
+        end
     elseif e.head == :.
         if e.args[1] ∈ (QuoteNode(:cf), QuoteNode(:x_cf), QuoteNode(:counterfactual))
-            return replace_syms!(e.args[2], membernames)
+            return replace_syms!(e.args[2], membernames; implication=implication)
         elseif e.args[1] ∈ (QuoteNode(:x), QuoteNode(:inst), QuoteNode(:instance))
-            # TODO: Check if this is correct
             return quote __orig_instance.$(e.args[2].value) end
         else
             @error "The tuple identifier should be one of (cf, x_cf, counterfactual) or (x, inst, instance), we got $(e.args[1])"
         end
     else
-        e2 = mapexpr(x -> replace_syms!(x, membernames), e)
+        e2 = mapexpr(x -> replace_syms!(x, membernames; implication=implication), e)
     end
 end
 
@@ -95,16 +117,45 @@ end
 function ground(kw)
     grounded_constraints = Pair{Vector{Symbol}, Any}[]
 
-    membernames = Dict{Any, Symbol}()
+    if kw.head == :if
+        # println("Implication: ", kw.head, " -- ", kw.args)
 
-    body::Expr = replace_syms!(kw, membernames)
-    source::Expr = Expr(:vect, keys(membernames)...)
-    inputargs::Expr = Expr(:tuple, values(membernames)...)
+        condfeatures = Dict{Any, Symbol}()
+        cond_body::Expr = replace_syms!(kw.args[1], condfeatures; implication=true)
+        cond_source::Expr = Expr(:vect, keys(condfeatures)...)
+        cond_inputargs::Expr = Expr(:tuple, values(condfeatures)...)
 
-    generated_func = quote
-        GeCo.make_source_concrete($(source)) => __orig_instance -> $inputargs -> $body
+        conseq_features = Dict{Any, Symbol}()
+        conseq_body::Expr = replace_syms!(kw.args[2], conseq_features)
+        conseq_source::Expr = Expr(:vect, keys(conseq_features)...)
+        conseq_inputargs::Expr = Expr(:tuple, values(conseq_features)...)
+
+        conseq_imp_features = Dict{Any, Symbol}()
+        conseq_imp_body::Expr = replace_syms!(kw.args[2], conseq_imp_features; implication=true)
+        # conseq_imp_source::Expr = Expr(:vect, keys(conseq_imp_features)...)
+        # conseq_imp_inputargs::Expr = Expr(:tuple, values(conseq_imp_features)...)
+
+        ## Generate the Implication ...
+        generated_func = quote
+            $Implication(__orig_instance -> __instance -> ($cond_body && !($conseq_imp_body)),
+                __orig_instance -> $conseq_inputargs -> $conseq_body,
+                GeCo.make_source_concrete($(cond_source)),
+                GeCo.make_source_concrete($(conseq_source)) )
+        end
+    else
+        membernames = Dict{Any, Symbol}()
+
+        body::Expr = replace_syms!(kw, membernames)
+        source::Expr = Expr(:vect, keys(membernames)...)
+        inputargs::Expr = Expr(:tuple, values(membernames)...)
+
+        generated_func = quote
+            $Constraint(GeCo.make_source_concrete($(source)), __orig_instance -> $inputargs -> $body)
+        end
     end
-    
+
     generated_func
 end
+
+
 

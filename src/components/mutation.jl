@@ -3,8 +3,7 @@
 ## The mutation operator
 ####
 
-function mutation!(
-    population::DataFrame, feasible_space::FeasibleSpace; max_num_samples::Int64 = 5)
+function mutation!(population::DataFrame, feasible_space::FeasibleSpace; max_num_samples::Int64 = 5)
 
     groups::Vector{FeatureGroup} = feasible_space.groups
     sample_space::Vector{DataFrame} = feasible_space.feasibleSpace
@@ -23,17 +22,22 @@ function mutation!(
             mutatedInstances.estcf[i] = false
         end
 
+        # This BitVector is used to determine which mutations are valid
+        validInstances = falses(num_rows)
+
         num_mutated_rows = 0
         for (index,group)  in enumerate(groups)
             df = sample_space[index]
 
+            ## TODO: Test performance for modified_features[group.indexes] vs modified_features .& group.indexes
             (isempty(df) || any(modified_features[group.indexes])) && continue;
 
             num_samples = min(max_num_samples, nrow(df))
             sampled_rows = StatsBase.sample(1:nrow(df), StatsBase.FrequencyWeights(df.count), num_samples; replace=false, ordered=true)
 
-            for (findex,fname) in enumerate(group.names)
-                # fidx = group.indexes[findex]
+
+            ## TODO: Test performance of for loop vs columnar approach
+            for fname in group.names
                 for s in 1:num_samples
                     mutatedInstances[num_mutated_rows+s, fname] = df[sampled_rows[s], fname]
                 end
@@ -41,12 +45,19 @@ function mutation!(
 
             for s in 1:num_samples
                 mutatedInstances[num_mutated_rows+s, :mod] .|= group.indexes
+
+                valid_action = actionCascade(mutatedInstances[num_mutated_rows+s, :], feasible_space.implications)
+                !valid_action && println("We found an invalid action: ", valid_action)
+                validInstances[num_mutated_rows+s] = valid_action
             end
 
             num_mutated_rows += num_samples
         end
-        # global num_generated += num_mutated_rows
-        append!(population, mutatedInstances[1:num_mutated_rows, :])
+
+        @assert sum(validInstances) == num_mutated_rows
+
+        # append!(population, mutatedInstances[1:num_mutated_rows, :])
+        append!(population, mutatedInstances[validInstances, :])
         row += 1
     end
 end

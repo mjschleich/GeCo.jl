@@ -1,6 +1,4 @@
-# module FeatureStruct
-
-# export FeatureConstraint, FeatureType, Feature, CONTINUOUS, CATEGORICAL, ORDINAL, NOCONSTRAINT, INCREASING, DECREASING, FeatureGroup
+using MLJScientificTypes
 
 @enum FeatureConstraint begin
     NOCONSTRAINT
@@ -22,19 +20,33 @@ struct Feature
     range::Float64
 end
 
-struct FeatureGroup
+# struct Feature_new
+#     name::String
+#     type::FeatureType
+#     actionable::Bool
+#     constraint::FeatureConstraint
+#     range::Float64
+# end
+
+
+struct FeatureGroup_old
     features::Array{Feature, 1}
     names::Array{String, 1}
     indexes::Array{Int64, 1}
     allCategorical::Bool
 end
 
+struct FeatureGroup
+    features::Tuple{Vararg{Symbol}}
+    names::Vector{Symbol}
+    indexes::BitVector                  ## TODO: replace indexes accordingly
+    allCategorical::Bool
+end
 
 function initializeFeatures(file_path::String, data::DataFrame)
     json_file = open(file_path, "r")
     return initializeFeatures(JSON.parse(json_file), data)
 end
-
 
 function initializeFeatures(features::Dict, data::DataFrame)
 
@@ -149,5 +161,3 @@ function initializeFeatures(features::Dict, data::DataFrame)
     return Dict(feature.name => feature for feature in feature_list), groups
 end
 
-
-# end

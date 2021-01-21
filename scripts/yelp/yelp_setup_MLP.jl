@@ -62,7 +62,7 @@ yhat = ScikitLearn.predict(mlj_classifier, MLJ.matrix(X))
 first_neg = findfirst(yhat .!= 1)
 println(first_neg)
 
-orig_entity = X[first_neg,:]
-classifier = initMLPEval(mlj_classifier,orig_entity)
+orig_instance = X[first_neg,:]
+classifier = initMLPEval(mlj_classifier,orig_instance)
 
 

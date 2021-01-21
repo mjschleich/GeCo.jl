@@ -85,4 +85,4 @@ println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
 #     end
 # end
 
-orig_entity = X[1,:]
+orig_instance = X[1,:]

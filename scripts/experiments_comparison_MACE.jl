@@ -4,11 +4,11 @@ using GeCo
 using Printf
 import Dates, JLD
 
-function evaluate(counterfactual, orig_entity, features, feature_distance_abs; norm_ratio::Array{Float64,1}=[0.0,1.0,0.0,0.0])
+function evaluate(counterfactual, orig_instance, features, feature_distance_abs; norm_ratio::Array{Float64,1}=[0.0,1.0,0.0,0.0])
     # features, groups = initializeFeatures(path*"/data_info.json", X)
     # println(values(features))
     ## Compute the distance between two entities
-    return distance(counterfactual, orig_entity, features, feature_distance_abs; norm_ratio=norm_ratio)
+    return distance(counterfactual, orig_instance, features, feature_distance_abs; norm_ratio=norm_ratio)
 end
 
 function runExperiment(dataset::String, desired_class::Int64)
@@ -65,17 +65,17 @@ function runExperiment(dataset::String, desired_class::Int64)
                 if predictions[i] != desired_class
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
-                    orig_entity = X[i, :]
-                    time = @elapsed (explanation, count, generation, rep_size) = explain(orig_entity, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, compress_data=compress)
+                    orig_instance = X[i, :]
+                    time = @elapsed (explanation, count, generation, rep_size) = explain(orig_instance, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, compress_data=compress)
 
-                    # dist = evaluate(explanation[1, :], orig_entity, feature_list, feature_distance_abs; norm_ratio=[0, 1.0, 0, 0])
-                    dist = distance(explanation[1:3, :], orig_entity, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
+                    # dist = evaluate(explanation[1, :], orig_instance, feature_list, feature_distance_abs; norm_ratio=[0, 1.0, 0, 0])
+                    dist = distance(explanation[1:3, :], orig_instance, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
 
                     # println("--", sum(explanation.mod[1]), explanation.mod[1:3], dist, argmin(dist))
 
                     changed_feats = falses(size(X,2))
                     for (fidx, feat) in enumerate(propertynames(X))
-                        changed_feats[fidx] = (orig_entity[feat] != explanation[1,feat])
+                        changed_feats[fidx] = (orig_instance[feat] != explanation[1,feat])
                     end
 
                     ## We only consider the top-explanation for this

@@ -1,26 +1,29 @@
 ## Generates the initial population
-function initialPopulation(orig_entity, features, groups, feasible_space; compress_data::Bool=false)
+function initialPopulation(orig_instance, feasible_space; compress_data::Bool=false)
+
+    groups = feasible_space.groups
+    num_features = feasible_space.num_features
 
     max_num_samples = 20
     num_rows = length(groups) * max_num_samples
 
-    initial_pop = DataFrame(orig_entity)
+    initial_pop = DataFrame(orig_instance)
 
     if compress_data
-        initial_pop = initializeManager(orig_entity; extended=true)
+        initial_pop = initializeManager(orig_instance; extended=true)
     else
         repeat!(initial_pop, num_rows)
         insertcols!(initial_pop,
             :score=>zeros(Float64, num_rows),
             :outc=>falses(num_rows),
             :estcf=>falses(num_rows),
-            :mod=>BitArray[falses(length(features)) for _=1:num_rows]
+            :mod=>BitArray[falses(num_features) for _=1:num_rows]
             )
     end
 
     row_index = 0
     for (index, group) in enumerate(groups)
-        df = feasible_space[index]
+        df = feasible_space.feasibleSpace[index]
 
         # if the feasible space is empty, continue to next group
         isempty(df) && continue;
@@ -30,31 +33,20 @@ function initialPopulation(orig_entity, features, groups, feasible_space; compre
 
         if compress_data
             for s in 1:num_samples
-                mod_df = falses(size(df, 2))
-                mod_pop = falses(length(features))
                 row = sampled_rows[s]
-
-                mod_pop[group.indexes] .= true
-
-                for (idx,fname) in enumerate(group.names)
-                    fidx = group.indexes[idx]
-
-                    # Set the mod for this row
-                    mod_df[idx] = (df[row, fname] != orig_entity[fname])
-                    # mod_pop[fidx] = (df[row, fname] != orig_entity[fname])
-                end
-
-                #println("mod: $mod_df / $mod_pop df[row,mod]: (df)")
-                # push!(initial_pop, mod_pop, (df[row, mod_df]...,score=0.0, outc=false, estcf=false))
-                push!(initial_pop, mod_pop, (df[row, 1:end-NUM_EXTRA_FEASIBLE_SPACE_COL]...,score=0.0, outc=false, estcf=false))
+                push!(initial_pop, group.indexes, (df[row, 1:end-NUM_EXTRA_FEASIBLE_SPACE_COL]...,score=0.0, outc=false, estcf=false))
             end
         else
-            for (idx,fname) in enumerate(group.names)
-                fidx = group.indexes[idx]
+            for feature in group.features
                 for s in 1:num_samples
-                    initial_pop[row_index+s, fname] = df[sampled_rows[s], fname]
-                    initial_pop[row_index+s, :mod][fidx] = 1 # (df[sampled_rows[s], fname] != orig_entity[fname])
+                    initial_pop[row_index+s, feature] = df[sampled_rows[s], feature]
                 end
+            end
+            for s in 1:num_samples
+                initial_pop[row_index+s, :mod] .|= group.indexes
+
+                valid_action = actionCascade(initial_pop[row_index+s, :], feasible_space.implications)
+                !valid_action && @error("Initial Population: We found an invalid action in row $(row_index+s)! ")
             end
         end
         row_index += num_samples

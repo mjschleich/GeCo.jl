@@ -10,7 +10,7 @@ import Dates, JLD
 function runExperiment(dataset::String, desired_class::Int64)
 
     include("$(dataset)/$(dataset)_setup_MACE.jl")
-    
+
     features, groups = initializeFeatures(path*"/data_info.json", X)
     distance_temp = Array{Float64,1}(undef, 12)
     failInit = 0
@@ -81,11 +81,11 @@ function runExperiment(dataset::String, desired_class::Int64)
                 if (desired_class == 1 ? predictions[i]<0.5 : predictions[i]>0.5)
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
-                    orig_entity = X[i, :]
+                    orig_instance = X[i, :]
 
                      # the naive
-                     time = @elapsed explanation = explain_naive(orig_entity, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, num_generations=gens)
-                    if (explanation === nothing) 
+                     time = @elapsed explanation = explain_naive(orig_instance, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, num_generations=gens)
+                    if (explanation === nothing)
                         print("fail to init naive")
                         failInit += 1
                         num_explained += 1
@@ -93,21 +93,21 @@ function runExperiment(dataset::String, desired_class::Int64)
                     end
                     dist =
 		    	 if nrow(explanation) >= 3
-			    distance(explanation[1:3, :], orig_entity, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
-			 else 
-			    distance(explanation, orig_entity, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
+			    distance(explanation[1:3, :], orig_instance, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
+			 else
+			    distance(explanation, orig_instance, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
 			 end
-			 
+
                      # println("--", sum(explanation.mod[1]), explanation.mod[1:3], dist, argmin(dist))
- 
+
                      changed_feats = falses(size(X,2))
                      for (fidx, feat) in enumerate(propertynames(X))
-                         changed_feats[fidx] = (orig_entity[feat] != explanation[1,feat])
+                         changed_feats[fidx] = (orig_instance[feat] != explanation[1,feat])
                      end
                      if (all(.!changed_feats))
-                         return (explanation, orig_entity, i)
+                         return (explanation, orig_instance, i)
                      end
- 
+
                      ## We only consider the top-explanation for this
                      push!(correct_outcome_naive, explanation[1,:outc]>0.5)
                      push!(feat_changed_naive, changed_feats)
@@ -120,9 +120,9 @@ function runExperiment(dataset::String, desired_class::Int64)
                 end
             end
             print(failInit)
-                        
+
 	    file_naive = "scripts/results/naive_exp/$(dataset)_naive_ga_experiment_ratio_$(ratio)_generations_$(gens).jld"
-	    
+
             JLD.save(file_naive, "times", times_naive, "dist", distances_naive, "numfeat", num_changed_naive)
 
             println("

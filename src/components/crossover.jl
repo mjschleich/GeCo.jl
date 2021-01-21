@@ -2,7 +2,12 @@
 #######
 ### Crossover operator
 #######
-function crossover!(population::DataFrame, orig_entity::DataFrameRow, feature_groups::Vector{FeatureGroup}, feasible_space)
+function crossover!(population::DataFrame, orig_instance::DataFrameRow, feasible_space::FeasibleSpace)
+
+    feature_groups = feasible_space.groups
+    sample_space = feasible_space.feasibleSpace
+    num_features = feasible_space.num_features
+    ranges = feasible_space.ranges
 
     gb = groupby( population[population.outc .== true,:], :mod )
 
@@ -16,12 +21,12 @@ function crossover!(population::DataFrame, orig_entity::DataFrameRow, feature_gr
         added_offspring = size(population,1)
 
         for (index, group) in enumerate(feature_groups)
-            df = feasible_space[index]
+            df = sample_space[index]
 
             # check whether we can change the feature value to something else
             (isempty(df) || group.allCategorical || !any(parent1.mod[group.indexes])) && continue
 
-            space = df[df.distance .< distanceFeatureGroup(parent1, orig_entity,group), :]
+            space = df[df.distance .< distance(parent1,orig_instance,num_features,ranges), :]
             isempty(space) && continue
 
             sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count), 1)
@@ -48,13 +53,13 @@ function crossover!(population::DataFrame, orig_entity::DataFrameRow, feature_gr
             c.mod = parent1.mod .| parent2.mod
 
             for (index, group) in enumerate(feature_groups)
-                df = feasible_space[index]
+                df = sample_space[index]
 
                 # check whether we can change the feature value to something else
                 (isempty(df) || !any(modified_features[group.indexes])) && continue
 
-                changed_p1 = any(parent1.mod[group.indexes])
-                changed_p2 = any(parent2.mod[group.indexes])
+                changed_p1 = any(parent1.mod .& group.indexes)
+                changed_p2 = any(parent2.mod .& group.indexes)
 
                 if changed_p1 && changed_p2
                     c[group.names] = (rand(Bool) ? parent1[group.names] : parent2[group.names])
@@ -64,19 +69,26 @@ function crossover!(population::DataFrame, orig_entity::DataFrameRow, feature_gr
                     c[group.names] = parent2[group.names]
                 end
             end
+
+            valid_action = actionCascade(c, feasible_space.implications)
+            !valid_action && @error("Crossover: We found an invalid action! $(c)")
+
             push!(population, c)
         end
     end
 end
 
 
-function crossover!(manager::DataManager, orig_entity::DataFrameRow, feature_groups::Vector{FeatureGroup}, feasible_space::Vector{DataFrame})
+function crossover!(manager::DataManager, orig_instance::DataFrameRow, feasible_space::FeasibleSpace)
+
+    feature_groups = feasible_space.groups
+    sample_space = feasible_space.feasibleSpace
 
     mod_list = collect(keys(manager.dict))
     num_groups = length(mod_list)
 
     # print(num_groups, size(manager))
-    c3=DataFrame(orig_entity)
+    c3=DataFrame(orig_instance)
     c3.score=0.0
     c3.outc=false
     c3.estcf=false
@@ -95,12 +107,12 @@ function crossover!(manager::DataManager, orig_entity::DataFrameRow, feature_gro
 
         ## Selective Mutation:
         for (index, group) in enumerate(feature_groups)
-            df = feasible_space[index]
+            df = sample_space[index]
 
             # check whether we can change the feature value to something else
             (isempty(df) || group.allCategorical || !any(mod_parent1[group.indexes])) && continue
 
-            group_dist = distanceFeatureGroup(parent1,orig_entity,group)
+            group_dist = distance(parent1,orig_instance,feasible_space.num_features, feasible_space.ranges)
             rows::BitVector = df.distance .< group_dist
 
             space = df[rows, :]::DataFrame
@@ -109,7 +121,7 @@ function crossover!(manager::DataManager, orig_entity::DataFrameRow, feature_gro
 
             sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count))
 
-            push!(population,parent1)                                                  ## TODO: Do we want to do sample more cases here??
+            push!(population,parent1)            # TODO: Do we want to do sample more cases here??
             population[end,group.names] = space[sampled_row, group.names]
             population[end,:estcf] = false
 
@@ -131,7 +143,7 @@ function crossover!(manager::DataManager, orig_entity::DataFrameRow, feature_gro
 
             ## TODO: Can we improve this bit?
 
-            #push!(manager, modified_features, (orig_entity[modified_features]..., score=0.0, outc=false, estcf=false))
+            #push!(manager, modified_features, (orig_instance[modified_features]..., score=0.0, outc=false, estcf=false))
             push!(manager, modified_features, c3[1,:])
             c = get_store(manager, modified_features)[end, :]
 
@@ -141,7 +153,7 @@ function crossover!(manager::DataManager, orig_entity::DataFrameRow, feature_gro
             # println(manager.dict[modified_features])
 
             for (index, group) in enumerate(feature_groups)
-                df = feasible_space[index]
+                df = sample_space[index]
 
                 # check whether we can change the feature value to something else
                 (isempty(df) || !any(modified_features[group.indexes])) && continue

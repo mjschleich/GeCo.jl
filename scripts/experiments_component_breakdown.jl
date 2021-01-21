@@ -50,13 +50,13 @@ function runAblationExperiment(dataset, model, desired_class)
             changed_feats = falses(size(X,2))
 
 
-            orig_entity = X[first_neg, :]
+            orig_instance = X[first_neg, :]
             clf =
                 if partial
                     if mlj_classifier isa PyCall.PyObject
-                        initMLPEval(mlj_classifier, orig_entity)
+                        initMLPEval(mlj_classifier, orig_instance)
                     else
-                        initPartialRandomForestEval(mlj_classifier, orig_entity, 1)
+                        initPartialRandomForestEval(mlj_classifier, orig_instance, 1)
                     end
                 else
                     mlj_classifier
@@ -83,21 +83,21 @@ function runAblationExperiment(dataset, model, desired_class)
 
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
-                    orig_entity = X[i, :]
+                    orig_instance = X[i, :]
 
                     clf =
                         if partial
                             if mlj_classifier isa PyCall.PyObject
-                                initMLPEval(mlj_classifier, orig_entity)
+                                initMLPEval(mlj_classifier, orig_instance)
                             else
-                                initPartialRandomForestEval(mlj_classifier, orig_entity, 1)
+                                initPartialRandomForestEval(mlj_classifier, orig_instance, 1)
                             end
                         else
                             mlj_classifier
                         end
 
                     time = @elapsed (explanation, count, generation, rep_size, ptime, stime, mtime, ctime) =
-                        explain(orig_entity, X, path, clf;
+                        explain(orig_instance, X, path, clf;
                             desired_class=desired_class,
                             compress_data=compress,
                             min_num_generations=5,
@@ -108,9 +108,9 @@ function runAblationExperiment(dataset, model, desired_class)
                             run_mutation=mutation_run,
                             domains=domains)
 
-                    # dist = distance(explanation[1:3, :], orig_entity, features, distance_temp; norm_ratio=[])
+                    # dist = distance(explanation[1:3, :], orig_instance, features, distance_temp; norm_ratio=[])
                     for (fidx, feat) in enumerate(propertynames(X))
-                        changed_feats[fidx] = (orig_entity[feat] != explanation[1,feat])
+                        changed_feats[fidx] = (orig_instance[feat] != explanation[1,feat])
                     end
 
                     num_explained += 1

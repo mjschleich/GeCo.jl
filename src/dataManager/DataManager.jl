@@ -123,12 +123,13 @@ function actionCascade(manager::DataManager, implications::Vector{GroundedImplic
     dict = manager.dict
     for impl in implications
 
+        affect_bits = impl.condFeatures .| impl.conseqFeaturesBitVec
         to_add = Dict{BitVector, DataFrame}()
 
         for (mod, df) in dict
 
             # continue if this is unrelated
-            bv .= mod .& impl.condFeatures
+            bv .= mod .& affect_bits
             if !any(bv)
                 df_to_add = get_store_impl(to_add, mod, manager.orig_instance, manager.extended)
                 append!(df_to_add, df)

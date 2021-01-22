@@ -124,15 +124,15 @@ function actionCascade(manager::DataManager, implications::Vector{GroundedImplic
     for impl in implications
 
         affect_bits = impl.condFeatures .| impl.conseqFeaturesBitVec
-        to_add = Dict{BitVector, DataFrame}()
+        # to_add = Dict{BitVector, DataFrame}()
 
         for (mod, df) in dict
 
             # continue if this is unrelated
             bv .= mod .& affect_bits
             if !any(bv)
-                df_to_add = get_store_impl(to_add, mod, manager.orig_instance, manager.extended)
-                append!(df_to_add, df)
+                # df_to_add = get_store_impl(to_add, mod, manager.orig_instance, manager.extended)
+                # append!(df_to_add, df)
                 continue
             end
 
@@ -141,8 +141,9 @@ function actionCascade(manager::DataManager, implications::Vector{GroundedImplic
 
             # store valid instances for next round
             if count(validInstances) != 0
-                df_to_add = get_store_impl(to_add, mod, manager.orig_instance, manager.extended)
-                append!(df_to_add, df[validInstances, :])
+                # df_to_add = get_store_impl(to_add, mod, manager.orig_instance, manager.extended)
+                # append!(df_to_add, df[validInstances, :])
+                dict[mod] = df[validInstances, :]
             end
 
             # there are invalid instances and we should process them and store for the next round
@@ -155,7 +156,9 @@ function actionCascade(manager::DataManager, implications::Vector{GroundedImplic
                 # tweak and add previously invalid instances
                 refined_mod = copy(mod)
                 refined_mod .|= impl.conseqFeaturesBitVec
-                df_to_add = get_store_impl(to_add, refined_mod, manager.orig_instance, manager.extended)
+                # note that refined_mod could be the same as mod, so we should update dict[mod] first 
+                # with validInstances before moving to invalid instances
+                df_to_add = get_store_impl(dict, refined_mod, manager.orig_instance, manager.extended)
 
                 fspace = impl.sampleSpace
                 features = impl.conseqFeatures
@@ -173,9 +176,5 @@ function actionCascade(manager::DataManager, implications::Vector{GroundedImplic
                     fspace[sampled_rows, features]))
             end
         end
-
-        dict = to_add
     end
-
-    manager.dict = dict
 end

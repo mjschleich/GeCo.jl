@@ -187,4 +187,6 @@ function crossover!(manager::DataManager, orig_instance::DataFrameRow, feasible_
             end
         end
     end
+
+    actionCascade(manager, feasible_space.implications)
 end

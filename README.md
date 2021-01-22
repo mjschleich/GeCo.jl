@@ -1,6 +1,6 @@
-# GeCo: Quality Explanations in Real Time
+# GeCo: Quality Counterfactual Explanations in Real Time
 
-To run GeCo, you need to have Julia installed [link](https://julialang.org/downloads/). Then you can run the following commands to load the package.
+To run GeCo, you need to have Julia installed ([link](https://julialang.org/downloads/)). Then you can run the following commands to load the package.
 
 ```Julia
 using Pkg; Pkg.activate(".")
@@ -17,9 +17,9 @@ include("scripts/allstate/allstate_setup_PRF.jl");
 
 Then run the following command to compute the explanations:
 ```Julia
-explanation,  = @time explain(orig_instance, X, path, classifier)
+explanation,  = @time explain(orig_entity, X, path, classifier)
 ```
-where `orig_instance` is the instance to be explained, `X` is the dataset, `path` is the path to the directory to the dataset, `classifier` is the model that is explained.
+where `orig_entity` is the entity to be explained, `X` is the dataset, `path` is the path to the directory to the dataset, `classifier` is the model that is explained.
 
 The explain function accepts the following optional keyword parameters:
 * `desired_class` -- value of the desired output (default = 1)

@@ -177,7 +177,7 @@
     ],
     "groups" : [
      ["city"],
-        ["state_id"],
+     ["state_id"],
      ["category"]
     ]
   }

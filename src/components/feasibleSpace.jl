@@ -107,12 +107,92 @@ function initDomains(groups::Vector{FeatureGroup}, data::DataFrame)::Vector{Data
     return domains
 end
 
+function groundImplications(
+    implications::Vector{Implication},
+    groups::Vector{FeatureGroup},
+    feasible_space::Vector{DataFrame},
+    orig_instance::DataFrameRow)::Vector{GroundedImplication}
+
+    conseqGroupDependency = zeros(Int64, length(groups))
+
+    condGroupDependency = [Int64[] for _ in implications]
+    condGroupDependencyBitVec = [falses(length(groups)) for _ in implications]
+
+    dependson = falses(length(groups), length(groups))
+
+    for (impID,implication) in enumerate(implications)
+        # Find feature group that contains the features in the consequence of the implication
+        conseqGroupDependency[impID] = findfirst(g -> (implication.conseqFeatures ⊆ g.features), groups)
+
+        # Find all feature groups that contains the features in the condition of the implication
+        condGroupDependency[impID] = findall(g -> !isempty(implication.condFeatures ∩ g.features), groups)
+
+        for gid in condGroupDependency[impID]
+            condGroupDependencyBitVec[impID][gid] = true
+            dependson[conseqGroupDependency[impID], gid] = true
+        end
+    end
+
+    # println("dependson matrix: ")
+    # println(dependson)
+
+    S = Set{Int64}(gid for gid in 1:length(groups) if all(.!dependson[gid, :]))
+
+    processedGroups = falses(length(groups))
+    processedImplication = falses(length(implications))
+
+    groundedImplications = Vector{GroundedImplication}()
+
+    while !isempty(S)
+        gid = pop!(S)
+
+        processedGroups[gid] = true
+
+        for (impID, implication) in enumerate(implications)
+
+            if !processedImplication[impID] &&
+                ((processedGroups .& condGroupDependencyBitVec[impID]) == condGroupDependencyBitVec[impID])
+
+                condFeatures = falses(length(groups[1].indexes))
+                for gid in condGroupDependency[impID]
+                    condFeatures .|= groups[gid].indexes
+                end
+
+                conseq_gid = conseqGroupDependency[impID]
+
+                # Filter the corresponding feasible space to define the sample space
+                conseq_func = implication.conseqFeatures => implication.consequence(orig_instance)
+                fspace = filter(conseq_func, feasible_space[conseq_gid])
+
+                push!(groundedImplications,
+                    GroundedImplication(
+                        implication.condition(orig_instance),
+                        fspace,
+                        condFeatures,
+                        groups[conseq_gid].names,
+                        groups[conseq_gid].indexes)
+                )
+
+                processedImplication[impID] = true
+            end
+        end
+
+        for i in 1:length(groups)
+            if !processedGroups[i] && all(processedGroups[dependson[i,:]])
+                push!(S, i)
+            end
+        end
+    end
+
+    @assert all(processedImplication) "Some implications have not been processed, most likely due to a loop in the dependencies of the implipactions."
+
+    return groundedImplications
+end
 
 function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFProgram;
     domains::Vector{DataFrame}=Vector{DataFrame}())::FeasibleSpace
 
     constraints = prog.constraints
-    implications = prog.implications
 
     groups = initGroups(prog, data)
     ranges = Dict(feature => Float64(maximum(col)-minimum(col)) for (feature, col) in pairs(eachcol(data)))
@@ -154,26 +234,7 @@ function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFP
         end
     end
 
-    groundedImplications = Vector{GroundedImplication}(undef, length(implications))
-
-    for (cidx, implication) in enumerate(implications)
-        ## Turn implication into a GroundedImplication
-
-        # Find feature group that contains the consequence features of the implication
-        conseq_gid = findfirst(x -> implication.conseqFeatures ⊆ x.features, groups)
-        cond_gid = findfirst(x -> implication.condFeatures ⊆ x.features, groups)
-
-        # Filter the corresponding feasible space to define the sample space
-        conseq_func = implication.conseqFeatures => implication.consequence(orig_instance)
-        fspace = filter(conseq_func, feasible_space[6])
-
-        groundedImplications[cidx] = GroundedImplication(
-            implication.condition(orig_instance),
-            fspace,
-            groups[cond_gid].indexes,
-            groups[conseq_gid].names,
-            groups[conseq_gid].indexes)
-    end
+    groundedImplications = groundImplications(prog.implications, groups, feasible_space, orig_instance)
 
     return FeasibleSpace(groups, ranges, num_features, feasible_space, groundedImplications)
 end

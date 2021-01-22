@@ -14,7 +14,6 @@ struct PLAFProgram
     groups::Vector{Tuple{Vararg{Symbol}}}
     constraints::Vector{Constraint}
     implications::Vector{Implication}
-    # constraints::Vector{Pair{Array{Symbol, 1}, Function}}
 end
 
 PLAFProgram() = PLAFProgram(Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
@@ -48,9 +47,26 @@ plaf_helper(x, t) = begin
     end
 end
 
+function group_coverter(t)
+    if t isa Expr
+        return quote
+            Tuple($t)
+        end
+    end
+end
+
 group_helper(x, t) = begin
-    quote
-        $push!($x.groups, $t)
+    if t isa Tuple{Expr}
+        groups = group_coverter.(t)
+        quote
+            $push!($x.groups, $(groups...))
+        end
+    elseif t isa Tuple{Symbol,Vararg{Symbol}}
+        quote
+            $push!($x.groups, $t)
+        end
+    else
+        @error "A group should define a list of features not $(typeof(t))"
     end
 end
 
@@ -59,13 +75,12 @@ macro PLAF(x, args...)
 end
 
 macro GROUP(x, args...)
-    @assert typeof(args) <: Tuple{Symbol,Vararg{Symbol}} "A group should be a list of features not $(typeof(args))"
     esc(group_helper(x,args))
 end
 
 function addkey!(membernames, nam)::Symbol
     if !haskey(membernames, nam)
-            membernames[nam] = gensym()
+        membernames[nam] = gensym()
     end
     membernames[nam]
 end
@@ -73,17 +88,13 @@ end
 onearg(e, f) = e.head == :call && length(e.args) == 2 && e.args[1] == f
 mapexpr(f, e) = Expr(e.head, map(f, e.args)...)
 
-
 replace_syms!(x, membernames; implication=false) = x
 replace_syms!(q::QuoteNode, membernames; implication=false) = replace_syms!(Meta.quot(q.value), membernames; implication=implication)
 
 function replace_syms!(e::Expr, membernames; implication=false)
-
     # println("replace_syms: ", e.head, " ==> ", e)
-
     if e.head == :quote
         # println("addkey: ", e.args[1], " ==> ", e)
-
         if !implication
             return addkey!(membernames, Meta.quot(e.args[1]))
         else
@@ -91,9 +102,9 @@ function replace_syms!(e::Expr, membernames; implication=false)
             return quote __instance.$(e.args[1]) end
         end
     elseif e.head == :.
-        if e.args[1] ∈ (QuoteNode(:cf), QuoteNode(:x_cf), QuoteNode(:counterfactual))
+        if e.args[1] ∈ (QuoteNode(:cf), QuoteNode(:x_cf), QuoteNode(:counterfactual), :cf, :x_cf, :counterfactual)
             return replace_syms!(e.args[2], membernames; implication=implication)
-        elseif e.args[1] ∈ (QuoteNode(:x), QuoteNode(:inst), QuoteNode(:instance))
+        elseif e.args[1] ∈ (:x, :inst, :instance, QuoteNode(:x), QuoteNode(:inst), QuoteNode(:instance))
             return quote __orig_instance.$(e.args[2].value) end
         else
             @error "The tuple identifier should be one of (cf, x_cf, counterfactual) or (x, inst, instance), we got $(e.args[1])"

@@ -1,27 +1,30 @@
 ## Generates the initial population
-function initialPopulation(orig_instance, feasible_space; compress_data::Bool=false)
+function initialPopulation(orig_instance, feasible_space; compress_data::Bool=false, max_num_samples::Int64=20)
 
     groups = feasible_space.groups
     num_features = feasible_space.num_features
 
-    max_num_samples = 20
     num_rows = length(groups) * max_num_samples
 
-    initial_pop = DataFrame(orig_instance)
-
     if compress_data
+        # Population is represented by the Δ-representation
         initial_pop = initializeManager(orig_instance; extended=true)
     else
+        # Population is represented by a dataframe
+        initial_pop = DataFrame(orig_instance)
+
         repeat!(initial_pop, num_rows)
         insertcols!(initial_pop,
             :score=>zeros(Float64, num_rows),
             :outc=>falses(num_rows),
             :estcf=>falses(num_rows),
-            :mod=>BitArray[falses(num_features) for _=1:num_rows]
+            :mod=>BitVector[falses(num_features) for _=1:num_rows]
             )
+
+        valid_rows = falses(num_rows)
+        rownum = 0
     end
 
-    row_index = 0
     for (index, group) in enumerate(groups)
         df = feasible_space.feasibleSpace[index]
 
@@ -39,22 +42,22 @@ function initialPopulation(orig_instance, feasible_space; compress_data::Bool=fa
         else
             for feature in group.features
                 for s in 1:num_samples
-                    initial_pop[row_index+s, feature] = df[sampled_rows[s], feature]
+                    initial_pop[rownum+s, feature] = df[sampled_rows[s], feature]
                 end
             end
             for s in 1:num_samples
-                initial_pop[row_index+s, :mod] .|= group.indexes
+                initial_pop[rownum+s, :mod] .|= group.indexes
 
-                valid_action = actionCascade(initial_pop[row_index+s, :], feasible_space.implications)
-                !valid_action && @error("Initial Population: We found an invalid action in row $(row_index+s)! ")
+                valid_action = actionCascade(initial_pop[rownum+s,:], feasible_space.implications)
+                valid_rows[rownum+s] = valid_action
             end
+            rownum += num_samples
         end
-        row_index += num_samples
     end
 
     if compress_data
         return initial_pop
     else
-        return initial_pop[1:row_index, :]
+        return initial_pop[valid_rows, :]
     end
 end

@@ -1,11 +1,8 @@
 
 
 function actionCascade(instance::DataFrameRow, implications::Vector{GroundedImplication}; dataManager::Bool=false)
-
     validAction = true
     for implication in implications
-
-        ## TODO: Do we need to include: any(instance[:mod] .& implication.condFeatures) in the if statement?
         if  implication.condition(instance)
 
             ## Assumption: There is only a single feature group that we need to change
@@ -21,6 +18,7 @@ function actionCascade(instance::DataFrameRow, implications::Vector{GroundedImpl
         end
     end
 
+    # !validAction &&  println("This action is not valid")
     return validAction
 end
 

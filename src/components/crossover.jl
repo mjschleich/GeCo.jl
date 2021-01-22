@@ -13,32 +13,34 @@ function crossover!(population::DataFrame, orig_instance::DataFrameRow, feasible
 
     num_groups = size(keys(gb),1)
 
+
     for group1 in 1:num_groups
         parent1 = gb[group1][1,:]
 
-        push!(population,parent1)
-        population[end,:estcf] = false
-        added_offspring = size(population,1)
+        # selective_mutation = DataFrame(parent1)
+        # repeat!(selective_mutation, length(groups+1))
 
-        for (index, group) in enumerate(feature_groups)
-            df = sample_space[index]
+        # # push!(population,parent1)
+        # selective_mutation[:,:estcf] .= false
 
-            # check whether we can change the feature value to something else
-            (isempty(df) || group.allCategorical || !any(parent1.mod[group.indexes])) && continue
+        # for (index, group) in enumerate(feature_groups)
+        #     df = sample_space[index]
 
-            space = df[df.distance .< distance(parent1,orig_instance,num_features,ranges), :]
-            isempty(space) && continue
+        #     # check whether we can change the feature value to something else
+        #     (isempty(df) || group.allCategorical || !any(parent1.mod[group.indexes])) && continue
 
-            sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count), 1)
+        #     space = df[df.distance .< distance(parent1,orig_instance,num_features,ranges), :]
+        #     isempty(space) && continue
 
-            push!(population,parent1)                                                  ## TODO: Do we want to do sample more cases here??
-            population[end,group.names] = space[sampled_row, group.names]
-            population[end,:estcf] = false
+        #     sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count), 1)
 
-            sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count), 1)
+        #     push!(population,parent1)                           ## TODO: Do we want to do sample more cases here??
+        #     population[end,group.names] = space[sampled_row,group.names]
+        #     population[end,:estcf] = false
 
-            population[added_offspring,group.names] = space[sampled_row, group.names]  ## This might create duplicates!!
-        end
+        #     sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count), 1)
+        #     population[added_offspring,group.names] = space[sampled_row, group.names]  ## This might create duplicates!!
+        # end
 
         for group2 in group1+1:num_groups
 
@@ -71,9 +73,8 @@ function crossover!(population::DataFrame, orig_instance::DataFrameRow, feasible
             end
 
             valid_action = actionCascade(c, feasible_space.implications)
-            !valid_action && @error("Crossover: We found an invalid action! $(c)")
-
-            push!(population, c)
+            valid_action && push!(population, c)
+            # !valid_action && @error("Crossover: We found an invalid action! $(c)")
         end
     end
 end
@@ -98,46 +99,45 @@ function crossover!(manager::DataManager, orig_instance::DataFrameRow, feasible_
         mod_parent1 = mod_list[group1]
 
         population = manager.dict[mod_parent1]
+
         parent1 = population[1,:]
-        cols_parent1 = names(parent1)[1:end-3]
+        cols_parent1 = propertynames(parent1)[1:end-3]      ## TODO: replace by propertynames
 
-        push!(population,parent1)
-        population[end,:estcf] = false
-        added_offspring = size(population,1)
+        # push!(population,parent1)
+        # population[end,:estcf] = false
+        # added_offspring = size(population,1)
 
-        ## Selective Mutation:
-        for (index, group) in enumerate(feature_groups)
-            df = sample_space[index]
+        # ## Selective Mutation:
+        # for (index, group) in enumerate(feature_groups)
+        #     df = sample_space[index]
+        #     # check whether we can change the feature value to something else
+        #     (isempty(df) || group.allCategorical || !any(mod_parent1[group.indexes])) && continue
 
-            # check whether we can change the feature value to something else
-            (isempty(df) || group.allCategorical || !any(mod_parent1[group.indexes])) && continue
+        #     group_dist = distance(parent1,orig_instance,feasible_space.num_features, feasible_space.ranges)
+        #     rows::BitVector = df.distance .< group_dist
 
-            group_dist = distance(parent1,orig_instance,feasible_space.num_features, feasible_space.ranges)
-            rows::BitVector = df.distance .< group_dist
+        #     space = df[rows, :]::DataFrame
 
-            space = df[rows, :]::DataFrame
+        #     isempty(space) && continue
 
-            isempty(space) && continue
+        #     sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count))
 
-            sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count))
+        #     push!(population,parent1)            # TODO: Do we want to do sample more cases here??
+        #     population[end,group.names] = space[sampled_row, group.names]
+        #     population[end,:estcf] = false
 
-            push!(population,parent1)            # TODO: Do we want to do sample more cases here??
-            population[end,group.names] = space[sampled_row, group.names]
-            population[end,:estcf] = false
+        #     sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count))
 
-            sampled_row = StatsBase.sample(1:nrow(space), StatsBase.FrequencyWeights(space.count))
-
-            population[added_offspring,group.names] = space[sampled_row, group.names]  ## This may add a duplicate!
-        end
+        #     population[added_offspring,group.names] = space[sampled_row, group.names]  ## This may add a duplicate!
+        # end
 
         ## Crossover:
         for group2 in group1+1:num_groups
-
             # println(group1, " ", group2)
 
             mod_parent2 = mod_list[group2]
             parent2 = manager.dict[mod_parent2][1,:]
-            cols_parent2 = names(parent2)[1:end-3]
+            cols_parent2 = propertynames(parent2)[1:end-3]              ## TODO: replace by propertynames
 
             modified_features::BitVector = mod_parent1 .| mod_parent2
 
@@ -145,7 +145,13 @@ function crossover!(manager::DataManager, orig_instance::DataFrameRow, feasible_
 
             #push!(manager, modified_features, (orig_instance[modified_features]..., score=0.0, outc=false, estcf=false))
             push!(manager, modified_features, c3[1,:])
-            c = get_store(manager, modified_features)[end, :]
+
+            d = get_store(manager, modified_features)
+            c = d[end, :]
+
+            # println(c.Age, " -- ", d[end, :Age])
+            # c.Age = 1000
+            # println(c.Age, " -- ", d[end, :Age])
 
             # c1 = parent1
             # c2 = parent2

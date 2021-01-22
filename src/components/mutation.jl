@@ -47,15 +47,14 @@ function mutation!(population::DataFrame, feasible_space::FeasibleSpace; max_num
                 mutatedInstances[num_mutated_rows+s, :mod] .|= group.indexes
 
                 valid_action = actionCascade(mutatedInstances[num_mutated_rows+s, :], feasible_space.implications)
-                !valid_action && println("We found an invalid action: ", valid_action)
+                # !valid_action && println("We found an invalid action: ", valid_action)
                 validInstances[num_mutated_rows+s] = valid_action
             end
 
             num_mutated_rows += num_samples
         end
 
-        @assert sum(validInstances) == num_mutated_rows
-
+        # @assert sum(validInstances) == num_mutated_rows
         # append!(population, mutatedInstances[1:num_mutated_rows, :])
         append!(population, mutatedInstances[validInstances, :])
         row += 1

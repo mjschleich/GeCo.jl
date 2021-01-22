@@ -101,4 +101,6 @@ function mutation!(manager::DataManager, feasible_space::FeasibleSpace; max_num_
             row += 1
         end
     end
+
+    actionCascade(manager, feasible_space.implications)
 end

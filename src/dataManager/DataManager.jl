@@ -1,4 +1,4 @@
-struct DataManager
+mutable struct DataManager
     orig_instance::DataFrameRow
     dict::Dict{BitVector, DataFrame}
     extended::Bool
@@ -8,19 +8,22 @@ initializeManager(orig_instance; extended=false) = begin
     DataManager(orig_instance, Dict{BitVector, DataFrame}(), extended)
 end
 
-get_store(manager::DataManager, mod::BitVector) = begin
-    if haskey(manager.dict, mod)
-        return manager.dict[mod]
+get_store_impl(dict::Dict{BitVector, DataFrame}, mod::BitVector, orig_instance, extended) = begin
+    if haskey(dict, mod)
+        return dict[mod]
     else
-        orig_instance = manager.orig_instance
         keyList = [key for (i,key) in enumerate(keys(orig_instance)) if mod[i]]
-        manager.dict[mod] = DataFrame([typeof(orig_instance[key])[] for key in keyList], keyList)
+        dict[mod] = DataFrame([typeof(orig_instance[key])[] for key in keyList], keyList)
 
         # We extend the df with the extra columns for the genetic algorithm
-        manager.extended && insertcols!(manager.dict[mod], :score=>Float64[], :outc=>Bool[], :estcf=>Bool[])
+        extended && insertcols!(dict[mod], :score=>Float64[], :outc=>Bool[], :estcf=>Bool[])
 
-        return manager.dict[mod]
+        return dict[mod]
     end
+end
+
+get_store(manager::DataManager, mod::BitVector) = begin
+    get_store_impl(manager.dict, mod, manager.orig_instance, manager.extended)
 end
 
 function Base.empty!(manager::DataManager)
@@ -97,4 +100,81 @@ end
 
 function Base.show(io::IO, manager::DataManager)
     print(io, "Data Manager (Groups=$(length(manager.dict)),  Entities=$(size(manager,1)))")
+end
+
+struct DeltaDataFrameWrapper
+    instance:: DataFrameRow
+    orig_instance:: DataFrameRow
+end
+
+function Base.getproperty(wrapper::DeltaDataFrameWrapper, property::Symbol)
+    if haskey(getfield(wrapper, :instance), property)
+        getproperty(getfield(wrapper, :instance), property)
+    else
+        getproperty(getfield(wrapper, :orig_instance), property)
+    end
+end
+
+
+function actionCascade(manager::DataManager, implications::Vector{GroundedImplication})
+    bv = BitVector(undef, length(manager.orig_instance))
+    # max_nrows = maximum(nrows(df) for (mod, df) in manager.dict)
+
+    dict = manager.dict
+    for impl in implications
+
+        to_add = Dict{BitVector, DataFrame}()
+
+        for (mod, df) in dict
+
+            # continue if this is unrelated
+            bv .= mod .& impl.condFeatures
+            if !any(bv)
+                df_to_add = get_store_impl(to_add, mod, manager.orig_instance, manager.extended)
+                append!(df_to_add, df)
+                continue
+            end
+
+            # calculate validInstances
+            validInstances = .!impl.condition.(DeltaDataFrameWrapper(instance, manager.orig_instance) for instance in eachrow(df))
+
+            # store valid instances for next round
+            if count(validInstances) != 0
+                df_to_add = get_store_impl(to_add, mod, manager.orig_instance, manager.extended)
+                append!(df_to_add, df[validInstances, :])
+            end
+
+            # there are invalid instances and we should process them and store for the next round
+            if count(validInstances) != length(validInstances) && !isempty(impl.sampleSpace)
+            
+                # println("There are $(count(.!validInstances)) invalid cases, below are one example")
+                # println(df[.!validInstances, :][1, :])
+                # println()
+                
+                # tweak and add previously invalid instances
+                refined_mod = copy(mod)
+                refined_mod .|= impl.conseqFeaturesBitVec
+                df_to_add = get_store_impl(to_add, refined_mod, manager.orig_instance, manager.extended)
+
+                fspace = impl.sampleSpace
+                features = impl.conseqFeatures
+                num_tuples = length(validInstances) - count(validInstances)
+                sampled_rows = StatsBase.sample(1:nrow(fspace), StatsBase.FrequencyWeights(fspace.count), num_tuples)
+
+                # during hcat, DataFrame will check that the columns from different dfs should be different, so
+                # we need to exclude common columns first
+
+                original_keys = keys(manager.orig_instance)[(mod .⊻ impl.conseqFeaturesBitVec) .& mod]
+                manager.extended && push!(original_keys, :score, :outc, :estcf)
+
+                append!(df_to_add, hcat(
+                    df[.!validInstances, original_keys],
+                    fspace[sampled_rows, features]))
+            end
+        end
+
+        dict = to_add
+    end
+
+    manager.dict = dict
 end

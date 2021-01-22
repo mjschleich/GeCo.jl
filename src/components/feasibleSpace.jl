@@ -165,7 +165,7 @@ function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFP
 
         # Filter the corresponding feasible space to define the sample space
         conseq_func = implication.conseqFeatures => implication.consequence(orig_instance)
-        fspace = filter(conseq_func, feasible_space[6])
+        fspace = filter(conseq_func, feasible_space[conseq_gid])
 
         groundedImplications[cidx] = GroundedImplication(
             implication.condition(orig_instance),

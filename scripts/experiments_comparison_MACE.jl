@@ -1,28 +1,18 @@
 
-using Pkg; Pkg.activate(".")
-using GeCo
-using Printf
-import Dates, JLD
 
-function evaluate(counterfactual, orig_instance, features, feature_distance_abs; norm_ratio::Array{Float64,1}=[0.0,1.0,0.0,0.0])
-    # features, groups = initializeFeatures(path*"/data_info.json", X)
-    # println(values(features))
-    ## Compute the distance between two entities
-    return distance(counterfactual, orig_instance, features, feature_distance_abs; norm_ratio=norm_ratio)
-end
+function runExperimentMACE(X::DataFrame, p::PLAFProgram, desired_class::Int64, dataset_name::String)
 
-function runExperiment(dataset::String, desired_class::Int64)
+    domains = initDomains(p,X)
+    ranges = Dict(feature => Float64(maximum(col)-minimum(col)) for (feature, col) in pairs(eachcol(X)))
+    num_features = ncol(X)
 
-    include("$(dataset)/$(dataset)_setup_MACE.jl")
-
-    features, groups = initializeFeatures(path*"/data_info.json", X)
     distance_temp = Array{Float64,1}(undef, 12)
 
     ## Use for the MACE comparison:
     predictions = ScikitLearn.predict(classifier, MLJ.matrix(X))
 
     println("Total number of predictions: $(length(predictions))\n"*
-        "Total number of positive predictions $(sum(predictions)\n)"*
+        "Total number of positive predictions $(sum(predictions))\n"*
         "Total number of negative predictions $(length(predictions)-sum(predictions))")
 
     num_changed = Array{Int64,1}()
@@ -35,7 +25,7 @@ function runExperiment(dataset::String, desired_class::Int64)
     avg_rep_size = Array{Float64,1}()
 
     # Run explanation once for compilation
-    explain(X[1, :], X, path, classifier; desired_class = desired_class)
+    explain(X[1, :], X, p, classifier; desired_class = desired_class)
 
     for ratio in ["l0l1", "l1", "combined"]
         nratio =
@@ -66,12 +56,17 @@ function runExperiment(dataset::String, desired_class::Int64)
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
                     orig_instance = X[i, :]
-                    time = @elapsed (explanation, count, generation, rep_size) = explain(orig_instance, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, compress_data=compress)
+                    time = @elapsed (explanation, count, generation, rep_size) =
+                        explain(orig_instance, X, p, classifier;
+                            domains=domains,
+                            desired_class=desired_class,
+                            verbose=false,
+                            norm_ratio=nratio,
+                            compress_data=compress)
 
-                    # dist = evaluate(explanation[1, :], orig_instance, feature_list, feature_distance_abs; norm_ratio=[0, 1.0, 0, 0])
-                    dist = distance(explanation[1:3, :], orig_instance, features, distance_temp; norm_ratio=[0, 1.0, 0, 0])
-
-                    # println("--", sum(explanation.mod[1]), explanation.mod[1:3], dist, argmin(dist))
+                    dist = distance(explanation[1:3, :], orig_instance, num_features, ranges;
+                        norm_ratio=[0, 1.0, 0, 0],
+                        distance_temp=distance_temp)
 
                     changed_feats = falses(size(X,2))
                     for (fidx, feat) in enumerate(propertynames(X))
@@ -80,8 +75,6 @@ function runExperiment(dataset::String, desired_class::Int64)
 
                     ## We only consider the top-explanation for this
                     push!(correct_outcome, explanation[1,:outc])
-                    # push!(num_changed, sum(explanation[1,:mod]))
-                    # push!(feat_changed, explanation[1,:mod])
                     push!(feat_changed, changed_feats)
                     push!(num_changed, sum(changed_feats))
                     push!(distances, dist[1])
@@ -96,7 +89,7 @@ function runExperiment(dataset::String, desired_class::Int64)
             end
 
             #file = "scripts/results/mace_exp/$(dataset)_geco_mace_experiment_$(Dates.today())_$(Dates.hour(Dates.now())):$(Dates.minute(Dates.now())).jld"
-            file = "scripts/results/mace_exp/$(dataset)_geco_mace_experiment_ratio_$(ratio)_compress_$(compress).jld"
+            file = "scripts/results/mace_exp/$(dataset_name)_geco_mace_experiment_ratio_$(ratio)_compress_$(compress).jld"
 
             JLD.save(file, "times", times, "dist", distances, "numfeat", num_changed, "num_generation", num_generation, "num_explored", num_explored, "avg_rep_size", avg_rep_size)
 
@@ -112,8 +105,3 @@ function runExperiment(dataset::String, desired_class::Int64)
         end
     end
 end
-
-runExperiment("credit", 1)
-runExperiment("adult", 1)
-
-#runExperiment("compas", 1)

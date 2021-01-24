@@ -107,19 +107,17 @@ end
 
 
 ## TODO: Move this somewhere else?
-
-function minimumObservableCounterfactual(data, orig_instance, constraints;
+function minimumObservableCounterfactual(data, predictions, orig_instance, program;
     check_feasibility::Bool=false,
     desired_class::Int64=1,
     norm_ratio::Array{Float64,1}=[0.0,1.0,0.0,0.0],
-    num_features::Int64=ncol(data)-1,
-    label_name=:preds,
-    distance_temp=Array{Float64,1}(undef, size(data)*4))
+    num_features::Int64=(ncol(data)-1),
+    ranges::Dict{Symbol,Float64}=Dict(feature => Float64(maximum(col)-minimum(col)) for (feature, col) in pairs(eachcol(data))),
+    distance_temp=Array{Float64,1}(undef, nrow(data)*4))
 
-    selected_data = observableCounterfactuals(data, constraints;
+    selected_data = observableCounterfactuals(data, predictions, orig_instance, program.constraints, program.implications;
         check_feasibility=check_feasibility,
-        desired_class=desired_class,
-        label_name=label_name)
+        desired_class=desired_class)
 
     if isempty(selected_data)
         return nothing, nothing
@@ -129,23 +127,28 @@ function minimumObservableCounterfactual(data, orig_instance, constraints;
         resize!(distance_temp, nrow(selected_data) * 4)
     end
 
-    distances = distance(selected_data[!, Not(:pred)], orig_instance, num_features;
+    distances = distance(selected_data, orig_instance, num_features, ranges;
         norm_ratio=norm_ratio, distance_temp=distance_temp)
 
     row = argmin(distances)
     return selected_data[row, :], distances[row]
 end
 
-function observableCounterfactuals(data, constraints;
+function observableCounterfactuals(data::DataFrame, predictions, orig_instance::DataFrameRow, constraints::Vector{Constraint}, implications::Vector{Implication};
     check_feasibility::Bool=false,
-    desired_class::Int64=1,
-    label_name=:preds)
+    desired_class::Int64=1)
 
-    selected_data = data[data[!, label_name] .== desired_class, :]
+    selected_data = data[predictions .== desired_class, :]
 
     if check_feasibility
         for constraint in constraints
-            filter!(constraint,selected_data)
+
+            constraint_pair = constraint.features => constraint.fun(orig_instance)
+            filter!(constraint_pair, selected_data)
+        end
+
+        for implication in implications
+            filter!(!(implication.condition(orig_instance)), selected_data)
         end
     end
 

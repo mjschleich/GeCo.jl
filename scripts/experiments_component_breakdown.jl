@@ -65,7 +65,7 @@ function runAblationExperiment(dataset, model, desired_class)
             println("Run once to account for compilation with $(typeof(clf)) ($(Dates.now()))")
 
             # Run once to account for compilation
-            explain(X[first_neg, :], X, path, clf;
+            explain(X[first_neg, :], X, p, clf;
                 desired_class=desired_class,
                 compress_data=compress,
                 min_num_generations=5,
@@ -97,7 +97,7 @@ function runAblationExperiment(dataset, model, desired_class)
                         end
 
                     time = @elapsed (explanation, count, generation, rep_size, ptime, stime, mtime, ctime) =
-                        explain(orig_instance, X, path, clf;
+                        explain(orig_instance, X, p, clf;
                             desired_class=desired_class,
                             compress_data=compress,
                             min_num_generations=5,

@@ -4,8 +4,7 @@ using GeCo
 using Printf
 import Dates, JLD
 
-
-function eval2(counterfactual, orig_instance)
+function evalDiceExp(counterfactual, orig_instance)
     dis = 0
     num = 0
     for i in [[0], [1], [2,3,4,5],[6,7,8,9,10,11,12,13],[14,15,16,17,18],[19,20,21,22,23,24],[25,26],[27,28]]
@@ -19,7 +18,6 @@ function eval2(counterfactual, orig_instance)
                 if counterfactual[index+1] != orig_instance[index+1]
                     num += 1
                     dis += 1
-
                     break
                 end
             end
@@ -34,13 +32,11 @@ function runDiceExperiment(dataset::String, desired_class::Int64)
 
     include("$(dataset)/$(dataset)_setup_Dice.jl")
 
-    # features, groups = initializeFeatures(path*"/data_info.json", X)
-    # distance_temp = Array{Float64,1}(undef, 12)
+    domains = initDomains(p,X)
 
     ## Use for the Torch comparison:
     in = torch.tensor(convert(Matrix, X)).float()
     predictions = classifier(in).float().detach().numpy()[:,desired_class+1]
-    # predictions = ScikitLearn.predict(classifier, MLJ.matrix(X))
 
     println("Total number of predictions: $(length(predictions))\n"*
         "Total number of positive predictions $(sum(predictions))\n"*
@@ -86,13 +82,18 @@ function runDiceExperiment(dataset::String, desired_class::Int64)
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
                     orig_instance = X[i, :]
-                    time = @elapsed (explanation, count, generation, rep_size) = explain(orig_instance, X, path, classifier; desired_class=desired_class, verbose=false, norm_ratio=nratio, compress_data=compress)
+                    time = @elapsed (explanation, count, generation, rep_size) =
+                        explain(orig_instance, X, p, classifier;
+                            domains=domains,
+                            desired_class=desired_class,
+                            verbose=false,
+                            norm_ratio=nratio,
+                            compress_data=compress)
 
-                    (dis, num) = eval2(explanation[1,:], orig_instance)
+                    (dis, num) = evalDiceExp(explanation[1,:], orig_instance)
 
                     ## We only consider the top-explanation for this
                     push!(correct_outcome, explanation[1,:outc])
-                    # push!(feat_changed, changed_feats)
                     push!(num_changed, num)
                     push!(distances, dis)
                     push!(times, time)
@@ -120,26 +121,6 @@ function runDiceExperiment(dataset::String, desired_class::Int64)
         end
     end
 end
-
-
-# function runExperiment()
-#     num_changed = Array{Int64,1}()
-#     distances = Array{Float64,1}()
-#     times = Array{Float64,1}()
-#     for i in 1:500
-#         orig_instance = X[i, :]
-#         time = @elapsed explanation = explain(orig_instance, X, path, classifier; desired_class = 1)
-#         (dis, num) = eval2(explanation[1,:], orig_instance)
-#         push!(num_changed, num)
-#         push!(times, time)
-#         push!(distances, dis)
-#     end
-#     file = "scripts/log/adult_gencount_with_Dice_experiment.jld"
-#     JLD.save(file, "times", times, "dist", distances, "numfeat", num_changed)
-#     println(times)
-#     println(distances)
-#     println(num_changed)
-# end
 
 runDiceExperiment("adult", 1)
 

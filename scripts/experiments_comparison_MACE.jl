@@ -25,7 +25,7 @@ function runExperimentMACE(X::DataFrame, p::PLAFProgram, desired_class::Int64, d
     avg_rep_size = Array{Float64,1}()
 
     # Run explanation once for compilation
-    explain(X[1, :], X, p, classifier; desired_class = desired_class)
+    explain(X[1, :], X, p, classifier; desired_class = desired_class, verbose=false)
 
     for ratio in ["l0l1", "l1", "combined"]
         nratio =

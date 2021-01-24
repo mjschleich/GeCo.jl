@@ -16,15 +16,6 @@ function runExperimentCERT(X::DataFrame, p::PLAFProgram, desired_class::Int64, d
         "Total number of positive predictions $(num_pos_preds)\n"*
         "Total number of negative predictions $(length(predictions)-num_pos_preds)")
 
-    num_changed_gc = Array{Int64,1}()
-    feat_changed_gc = Array{BitArray{1},1}()
-    distances_gc = Array{Float64,1}()
-    correct_outcome_gc = Array{Bool,1}()
-    times_gc = Array{Float64,1}()
-    num_explored_gc = Array{Int64,1}()
-    num_generation_gc = Array{Int64,1}()
-    avg_rep_size_gc= Array{Float64,1}()
-
     num_changed_naive = Array{Int64,1}()
     feat_changed_naive = Array{BitArray{1},1}()
     distances_naive = Array{Float64,1}()
@@ -50,17 +41,8 @@ function runExperimentCERT(X::DataFrame, p::PLAFProgram, desired_class::Int64, d
         for gens in [100, 200, 300]
 
             num_explained = 0
-            num_to_explain = 50000
+            num_to_explain = 5000
             num_failed_init = 0
-
-            empty!(num_changed_gc)
-            empty!(feat_changed_gc)
-            empty!(distances_gc)
-            empty!(correct_outcome_gc)
-            empty!(times_gc)
-            empty!(num_explored_gc)
-            empty!(num_generation_gc)
-            empty!(avg_rep_size_gc)
 
             empty!(num_changed_naive)
             empty!(feat_changed_naive)
@@ -73,6 +55,7 @@ function runExperimentCERT(X::DataFrame, p::PLAFProgram, desired_class::Int64, d
 
             for i in 1:length(predictions)
                 if (desired_class == 1 ? predictions[i]<0.5 : predictions[i]>0.5)
+
                     (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
                     orig_instance = X[i, :]
@@ -92,22 +75,22 @@ function runExperimentCERT(X::DataFrame, p::PLAFProgram, desired_class::Int64, d
                             distance(explanation, orig_instance, num_features, ranges; distance_temp=distance_temp, norm_ratio=[0, 1.0, 0, 0])
                         end
 
-                     changed_feats = falses(size(X,2))
-                     for (fidx, feat) in enumerate(propertynames(X))
-                         changed_feats[fidx] = (orig_instance[feat] != explanation[1,feat])
-                     end
-                     if all(.!changed_feats)
-                         return (explanation, orig_instance, i)
-                     end
+                    changed_feats = falses(size(X,2))
+                    for (fidx, feat) in enumerate(propertynames(X))
+                        changed_feats[fidx] = (orig_instance[feat] != explanation[1,feat])
+                    end
+                    if all(.!changed_feats)
+                        return (explanation, orig_instance, i)
+                    end
 
-                     ## We only consider the top-explanation for this
-                     pred = ScikitLearn.predict_proba(classifier, MLJ.matrix(explanation[:,1:end-1]))[:, desired_class+1]
+                    ## We only consider the top-explanation for this
+                    pred = ScikitLearn.predict_proba(classifier, MLJ.matrix(explanation[:,1:end-1]))[:, desired_class+1]
 
-                     push!(correct_outcome_naive, pred[1]>0.5)
-                     push!(feat_changed_naive, changed_feats)
-                     push!(num_changed_naive, sum(changed_feats))
-                     push!(distances_naive, dist[1])
-                     push!(times_naive, time)
+                    push!(correct_outcome_naive, pred[1]>0.5)
+                    push!(feat_changed_naive, changed_feats)
+                    push!(num_changed_naive, sum(changed_feats))
+                    push!(distances_naive, dist[1])
+                    push!(times_naive, time)
 
                     num_explained += 1
                     (num_explained >= num_to_explain) && break

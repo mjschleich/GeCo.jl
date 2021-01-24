@@ -14,7 +14,7 @@ for dataset in ["adult", "credit"]
 
     Xcopy = DataFrame(X)
 
-    # runExperimentMACE(Xcopy, p, 1, dataset)
+    runExperimentMACE(Xcopy, p, 1, dataset)
 
     Xcopy = DataFrame(X)
 

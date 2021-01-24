@@ -127,7 +127,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
 
     elseif !ablation
 
-        feasible_space = @time feasibleSpace(data, orig_instance, program; domains=domains)
+        feasible_space = feasibleSpace(data, orig_instance, program; domains=domains)
         population = initialPopulation(orig_instance, feasible_space; compress_data=compress_data)
 
         count += size(population,1)

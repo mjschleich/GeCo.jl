@@ -1,7 +1,7 @@
 using Pkg; Pkg.activate(".")
 using GeCo
 
-using Printf
+using Printf, DataFrames
 import Dates, JLD
 
 function evalDiceExp(counterfactual, orig_instance)
@@ -28,9 +28,7 @@ function evalDiceExp(counterfactual, orig_instance)
 end
 
 
-function runDiceExperiment(dataset::String, desired_class::Int64)
-
-    include("$(dataset)/$(dataset)_setup_Dice.jl")
+function runDiceExperiment(X::DataFrame, p::PLAFProgram, dataset::String, desired_class::Int64)
 
     domains = initDomains(p,X)
 
@@ -122,6 +120,9 @@ function runDiceExperiment(dataset::String, desired_class::Int64)
     end
 end
 
-runDiceExperiment("adult", 1)
+
+include("adult/adult_setup_Dice.jl")
+
+runDiceExperiment(X, p, "adult", 1)
 
 

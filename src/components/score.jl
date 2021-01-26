@@ -36,3 +36,7 @@ end
 function score(classifier::RandomForestEval, counterfactuals::DataFrame, desired_class)::Vector{Float64}
     return RandomForestEvaluation.predict(classifier, counterfactuals)
 end
+
+function score(classifier::Function, counterfactuals::DataFrame, desired_class)::Vector{Float64}
+    return classifier.(counterfactuals)
+end

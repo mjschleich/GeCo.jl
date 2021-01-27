@@ -42,20 +42,20 @@ tree_model.max_depth = 10
 
 # split the dataset
 train, test = partition(eachindex(y), 0.7, shuffle=true)
-mlj_classifier = machine(tree_model, X, y)
+classifier = machine(tree_model, X, y)
 
 # train
-MLJ.fit!(mlj_classifier, rows=train)
+MLJ.fit!(classifier, rows=train)
 
 
 ## Evaluation:
-yhat_train = MLJ.predict(mlj_classifier, X[train,:])
-yhat_test = MLJ.predict(mlj_classifier, X[test,:])
+yhat_train = MLJ.predict(classifier, X[train,:])
+yhat_test = MLJ.predict(classifier, X[test,:])
 
 println("Accuracy train data: $(accuracy(mode.(yhat_train), y[train]))")
 println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
 
 orig_instance = X[536, :]
 
-partial_classifier = initPartialRandomForestEval(mlj_classifier, orig_instance, 1);
-full_classifier = initRandomForestEval(mlj_classifier, orig_instance, 1);
+partial_classifier = initPartialRandomForestEval(classifier, orig_instance, 1);
+full_classifier = initRandomForestEval(classifier, orig_instance, 1);

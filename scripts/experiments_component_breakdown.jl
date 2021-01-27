@@ -4,26 +4,25 @@ using GeCo
 using Printf
 import Dates, JLD, PyCall
 
-function runAblationExperiment(dataset, model, desired_class)
-
-    include("$(dataset)/$(dataset)_setup_$(model).jl")
+function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, dataset_name::String, model::String, desired_class::Int64)
 
     println("Initializing Domains: ($(Dates.now()))")
-    domains = initDomains(path, X)
+    domains = initDomains(p, X)
 
     # distance_temp = Array{Float64,1}(undef, 12)
     println("Computing Predictions: ($(Dates.now()))")
-    predictions = if mlj_classifier isa PyCall.PyObject
-        mode.(ScikitLearn.predict(mlj_classifier, MLJ.matrix(X)))
-    else
-        MLJ.predict_mode(mlj_classifier, X)
-    end
+    predictions = if classifier isa PyCall.PyObject
+            mode.(ScikitLearn.predict(classifier, MLJ.matrix(X)))
+        else
+            MLJ.predict_mode(classifier, X)
+        end
+
     first_neg = findfirst(predictions .!= desired_class)
 
     # println("Total number of predictions: $(length(predictions)) \n",
     #     "Total number of positive predictions $(sum(predictions))")
 
-    num_to_explain = 100
+    num_to_explain = 1000
 
     num_changed = Array{Int64,1}(undef, num_to_explain)
     feat_changed = Array{BitArray{1},1}(undef, num_to_explain)
@@ -49,17 +48,16 @@ function runAblationExperiment(dataset, model, desired_class)
             num_explained = 0
             changed_feats = falses(size(X,2))
 
-
             orig_instance = X[first_neg, :]
             clf =
                 if partial
-                    if mlj_classifier isa PyCall.PyObject
-                        initMLPEval(mlj_classifier, orig_instance)
+                    if classifier isa PyCall.PyObject
+                        initMLPEval(classifier, orig_instance)
                     else
-                        initPartialRandomForestEval(mlj_classifier, orig_instance, 1)
+                        initPartialRandomForestEval(classifier, orig_instance, 1)
                     end
                 else
-                    mlj_classifier
+                    classifier
                 end
 
             println("Run once to account for compilation with $(typeof(clf)) ($(Dates.now()))")
@@ -87,13 +85,13 @@ function runAblationExperiment(dataset, model, desired_class)
 
                     clf =
                         if partial
-                            if mlj_classifier isa PyCall.PyObject
-                                initMLPEval(mlj_classifier, orig_instance)
+                            if classifier isa PyCall.PyObject
+                                initMLPEval(classifier, orig_instance)
                             else
-                                initPartialRandomForestEval(mlj_classifier, orig_instance, 1)
+                                initPartialRandomForestEval(classifier, orig_instance, 1)
                             end
                         else
-                            mlj_classifier
+                            classifier
                         end
 
                     time = @elapsed (explanation, count, generation, rep_size, ptime, stime, mtime, ctime) =
@@ -135,7 +133,7 @@ function runAblationExperiment(dataset, model, desired_class)
             end
 
             model_name = (partial ?  "$(model)_partial_model" : "$(model)_mlj_model")
-            file = "scripts/results/ablation_exp/geco_ablation_experiments_$(dataset)_$(model_name)_compress_$(compress)_mutation_$(mutation_run)_crossover_$(crossover_run).jld"
+            file = "scripts/results/ablation_exp/geco_ablation_experiments_$(dataset_name)_$(model_name)_compress_$(compress)_mutation_$(mutation_run)_crossover_$(crossover_run).jld"
             JLD.save(file,
                 "times", times,
                 "dist", distances,
@@ -166,7 +164,10 @@ function runAblationExperiment(dataset, model, desired_class)
 end
 
 
-# runAblationExperiment("allstate", "PRF", 1)
-# runAblationExperiment("yelp", "PRF", 1)
-runAblationExperiment("allstate", "MLP", 1)
-runAblationExperiment("yelp", "MLP", 1)
+for dataset in ["allstate", "yelp"]
+    for model in ["PRF", "MLP"]
+
+        include("$(dataset)/$(dataset)_setup_$(model).jl")
+        runBreakdownExperiment(X, p, classifier, dataset, model, 1)
+    end
+end

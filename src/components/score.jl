@@ -38,5 +38,5 @@ function score(classifier::RandomForestEval, counterfactuals::DataFrame, desired
 end
 
 function score(classifier::Function, counterfactuals::DataFrame, desired_class)::Vector{Float64}
-    return classifier.(counterfactuals)
+    return classifier(counterfactuals)
 end

@@ -97,7 +97,7 @@ function runExperimentCERT(X::DataFrame, p::PLAFProgram, desired_class::Int64, d
                 end
             end
 
-	        file_naive = "scripts/results/naive_exp/$(dataset_name)_naive_ga_experiment_ratio_$(ratio)_generations_$(gens).jld"
+	        file_naive = "scripts/results/cert_exp/$(dataset_name)_naive_ga_experiment_ratio_$(ratio)_generations_$(gens).jld"
 
             JLD.save(file_naive, "times", times_naive, "dist", distances_naive, "numfeat", num_changed_naive)
 

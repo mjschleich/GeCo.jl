@@ -64,15 +64,14 @@ tree_model.n_trees = 500
 tree_model.min_samples_leaf = 3
 tree_model.max_depth = 10
 
-mlj_classifier = machine(tree_model, X, y)
+classifier = machine(tree_model, X, y)
 
 # train
-# MLJ.fit!(classifier, rows=train)
-MLJ.fit!(mlj_classifier)
+MLJ.fit!(classifier)
 
 ## Evaluation:
-yhat_train = MLJ.predict(mlj_classifier, X[train,:])
-yhat_test = MLJ.predict(mlj_classifier, X[test,:])
+yhat_train = MLJ.predict(classifier, X[train,:])
+yhat_test = MLJ.predict(classifier, X[test,:])
 
 println("Accuracy train data: $(accuracy(mode.(yhat_train), y[train]))")
 println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
@@ -86,6 +85,7 @@ println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
 # end
 
 orig_instance = X[1,:]
+# prf_classifier = initPartialRandomForestEval(mlj_classifier, orig_instance, 1);
+# frf_classifier = initRandomForestEval(mlj_classifier, orig_instance, 1);
 
-classifier = initPartialRandomForestEval(mlj_classifier, orig_instance, 1);
-full_classifier = initRandomForestEval(mlj_classifier, orig_instance, 1);
+include("allstate_constraints.jl")

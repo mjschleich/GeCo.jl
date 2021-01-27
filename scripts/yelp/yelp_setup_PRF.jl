@@ -57,5 +57,5 @@ println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
 
 orig_instance = X[536, :]
 
-classifier = initPartialRandomForestEval(mlj_classifier, orig_instance, 1);
+partial_classifier = initPartialRandomForestEval(mlj_classifier, orig_instance, 1);
 full_classifier = initRandomForestEval(mlj_classifier, orig_instance, 1);

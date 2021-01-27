@@ -21,8 +21,6 @@ select!(data, Not([:review_stars,:business_id,:user_id,:review_id,:category_id, 
 y, X = unpack(data, ==(:high_ranking), colname -> true);
 y = categorical(y)
 
-println(y[1:10], vec(collect(Int, y[1:10])))
-
 # change the input to the type they want
 coerce!(X,
     :city => Multiclass,

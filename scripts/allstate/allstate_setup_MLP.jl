@@ -61,23 +61,24 @@ X = MLJ.transform(onehot_machine, X)
 
 # load the model
 @sk_import neural_network: MLPClassifier
-# it's not mlj tho
+
 #mlj_classifier=MLPClassifier(hidden_layer_sizes=(200,100,100,))
-mlj_classifier=MLPClassifier() ## hidden_layer_sizes=(10,10))
+classifier=MLPClassifier() ## hidden_layer_sizes=(10,10))
 
 # Training
-ScikitLearn.fit!(mlj_classifier,MLJ.matrix(X),vec(collect(Int, y)))
+ScikitLearn.fit!(classifier,MLJ.matrix(X),vec(collect(Int, y)))
 
 ## Evaluation:
-yhat_train = ScikitLearn.predict(mlj_classifier, MLJ.matrix(X[train,:]))
-yhat_test = ScikitLearn.predict(mlj_classifier, MLJ.matrix(X[test,:]))
+yhat_train = ScikitLearn.predict(classifier, MLJ.matrix(X[train,:]))
+yhat_test = ScikitLearn.predict(classifier, MLJ.matrix(X[test,:]))
 
 println("Accuracy train data: $(mean(yhat_train .== y[train]))")
 println("Accuracy test data: $(mean(yhat_test .== y[test]))")
 
-yhat = ScikitLearn.predict(mlj_classifier, MLJ.matrix(X))
+yhat = ScikitLearn.predict(classifier, MLJ.matrix(X))
 first_neg = findfirst(yhat .!= 1)
-println(first_neg)
+# println(first_neg)
 
 orig_instance = X[first_neg,:]
-classifier = initMLPEval(mlj_classifier,orig_instance)
+# partial_classifier = initMLPEval(mlj_classifier,orig_instance)
+include("allstate_constraints.jl")

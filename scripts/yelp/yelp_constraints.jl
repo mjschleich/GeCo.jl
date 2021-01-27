@@ -1,0 +1,573 @@
+p = PLAFProgram()
+
+@GROUP(p, s for s in propertynames(X) if contains(string(s), "city"))
+@GROUP(p, s for s in propertynames(X) if contains(string(s), "state_id"))
+@GROUP(p, s for s in propertynames(X) if contains(string(s), "category"))
+
+@PLAF(p, cf.latitude == x.latitude)
+@PLAF(p, cf.longitude == x.longitude)
+
+@PLAF(p, cf.year_joined == x.year_joined)
+
+@PLAF(p, cf.reviewcount >= x.reviewcount)
+@PLAF(p, cf.review_count >= x.review_count)
+@PLAF(p, cf.compliement_hot >= x.compliement_hot)
+@PLAF(p, cf.compliment_more >= x.compliment_more)
+@PLAF(p, cf.compliment_profile >= x.compliment_profile)
+@PLAF(p, cf.compliment_cute >= x.compliment_cute)
+@PLAF(p, cf.compliment_list >= x.compliment_list)
+@PLAF(p, cf.compliment_note >= x.compliment_note)
+@PLAF(p, cf.compliment_plain >= x.compliment_plain)
+@PLAF(p, cf.compliment_cool >= x.compliment_cool)
+@PLAF(p, cf.compliment_funny >= x.compliment_funny)
+@PLAF(p, cf.compliment_writer >= x.compliment_writer)
+@PLAF(p, cf.compliment_photos >= x.compliment_photos)
+
+@PLAF(p, cf.city__1 == x.city__1 &&
+    cf.city__6 == x.city__6 &&
+    cf.city__9 == x.city__9 &&
+    cf.city__14 == x.city__14 &&
+    cf.city__15 == x.city__15 &&
+    cf.city__16 == x.city__16 &&
+    cf.city__17 == x.city__17 &&
+    cf.city__19 == x.city__19 &&
+    cf.city__22 == x.city__22 &&
+    cf.city__25 == x.city__25 &&
+    cf.city__29 == x.city__29 &&
+    cf.city__30 == x.city__30 &&
+    cf.city__31 == x.city__31 &&
+    cf.city__32 == x.city__32 &&
+    cf.city__33 == x.city__33 &&
+    cf.city__36 == x.city__36 &&
+    cf.city__37 == x.city__37 &&
+    cf.city__38 == x.city__38 &&
+    cf.city__42 == x.city__42 &&
+    cf.city__43 == x.city__43 &&
+    cf.city__44 == x.city__44 &&
+    cf.city__45 == x.city__45 &&
+    cf.city__47 == x.city__47 &&
+    cf.city__48 == x.city__48 &&
+    cf.city__49 == x.city__49 &&
+    cf.city__52 == x.city__52 &&
+    cf.city__53 == x.city__53 &&
+    cf.city__55 == x.city__55 &&
+    cf.city__59 == x.city__59 &&
+    cf.city__61 == x.city__61 &&
+    cf.city__63 == x.city__63 &&
+    cf.city__64 == x.city__64 &&
+    cf.city__69 == x.city__69 &&
+    cf.city__71 == x.city__71 &&
+    cf.city__72 == x.city__72 &&
+    cf.city__78 == x.city__78 &&
+    cf.city__79 == x.city__79 &&
+    cf.city__80 == x.city__80 &&
+    cf.city__81 == x.city__81 &&
+    cf.city__82 == x.city__82 &&
+    cf.city__84 == x.city__84 &&
+    cf.city__85 == x.city__85 &&
+    cf.city__86 == x.city__86 &&
+    cf.city__87 == x.city__87 &&
+    cf.city__89 == x.city__89 &&
+    cf.city__91 == x.city__91 &&
+    cf.city__92 == x.city__92 &&
+    cf.city__93 == x.city__93 &&
+    cf.city__95 == x.city__95 &&
+    cf.city__96 == x.city__96 &&
+    cf.city__99 == x.city__99 &&
+    cf.city__100 == x.city__100 &&
+    cf.city__102 == x.city__102 &&
+    cf.city__103 == x.city__103 &&
+    cf.city__108 == x.city__108 &&
+    cf.city__109 == x.city__109 &&
+    cf.city__110 == x.city__110 &&
+    cf.city__112 == x.city__112 &&
+    cf.city__113 == x.city__113 &&
+    cf.city__119 == x.city__119 &&
+    cf.city__121 == x.city__121 &&
+    cf.city__122 == x.city__122 &&
+    cf.city__124 == x.city__124 &&
+    cf.city__125 == x.city__125 &&
+    cf.city__126 == x.city__126 &&
+    cf.city__127 == x.city__127 &&
+    cf.city__130 == x.city__130 &&
+    cf.city__132 == x.city__132 &&
+    cf.city__134 == x.city__134 &&
+    cf.city__135 == x.city__135 &&
+    cf.city__136 == x.city__136 &&
+    cf.city__138 == x.city__138 &&
+    cf.city__141 == x.city__141 &&
+    cf.city__144 == x.city__144 &&
+    cf.city__149 == x.city__149 &&
+    cf.city__151 == x.city__151 &&
+    cf.city__152 == x.city__152 &&
+    cf.city__154 == x.city__154 &&
+    cf.city__155 == x.city__155 &&
+    cf.city__160 == x.city__160 &&
+    cf.city__161 == x.city__161 &&
+    cf.city__163 == x.city__163 &&
+    cf.city__166 == x.city__166 &&
+    cf.city__167 == x.city__167 &&
+    cf.city__168 == x.city__168 &&
+    cf.city__170 == x.city__170 &&
+    cf.city__172 == x.city__172 &&
+    cf.city__173 == x.city__173 &&
+    cf.city__178 == x.city__178 &&
+    cf.city__179 == x.city__179 &&
+    cf.city__180 == x.city__180 &&
+    cf.city__183 == x.city__183 &&
+    cf.city__185 == x.city__185 &&
+    cf.city__186 == x.city__186 &&
+    cf.city__190 == x.city__190 &&
+    cf.city__193 == x.city__193 &&
+    cf.city__199 == x.city__199 &&
+    cf.city__201 == x.city__201 &&
+    cf.city__202 == x.city__202 &&
+    cf.city__203 == x.city__203 &&
+    cf.city__204 == x.city__204 &&
+    cf.city__209 == x.city__209 &&
+    cf.city__211 == x.city__211 &&
+    cf.city__213 == x.city__213 &&
+    cf.city__214 == x.city__214 &&
+    cf.city__215 == x.city__215 &&
+    cf.city__216 == x.city__216 &&
+    cf.city__218 == x.city__218 &&
+    cf.city__222 == x.city__222 &&
+    cf.city__223 == x.city__223 &&
+    cf.city__228 == x.city__228 &&
+    cf.city__229 == x.city__229 &&
+    cf.city__232 == x.city__232 &&
+    cf.city__236 == x.city__236 &&
+    cf.city__237 == x.city__237 &&
+    cf.city__238 == x.city__238 &&
+    cf.city__242 == x.city__242 &&
+    cf.city__244 == x.city__244 &&
+    cf.city__245 == x.city__245 &&
+    cf.city__247 == x.city__247 &&
+    cf.city__248 == x.city__248 &&
+    cf.city__249 == x.city__249 &&
+    cf.city__250 == x.city__250 &&
+    cf.city__251 == x.city__251 &&
+    cf.city__252 == x.city__252 &&
+    cf.city__253 == x.city__253 &&
+    cf.city__256 == x.city__256 &&
+    cf.city__257 == x.city__257 &&
+    cf.city__260 == x.city__260 &&
+    cf.city__263 == x.city__263 &&
+    cf.city__264 == x.city__264 &&
+    cf.city__265 == x.city__265 &&
+    cf.city__266 == x.city__266 &&
+    cf.city__268 == x.city__268 &&
+    cf.city__269 == x.city__269 &&
+    cf.city__270 == x.city__270 &&
+    cf.city__273 == x.city__273 &&
+    cf.city__278 == x.city__278 &&
+    cf.city__279 == x.city__279 &&
+    cf.city__280 == x.city__280 &&
+    cf.city__281 == x.city__281 &&
+    cf.city__285 == x.city__285 &&
+    cf.city__287 == x.city__287 &&
+    cf.city__288 == x.city__288 &&
+    cf.city__290 == x.city__290 &&
+    cf.city__293 == x.city__293 &&
+    cf.city__294 == x.city__294 &&
+    cf.city__298 == x.city__298 &&
+    cf.city__299 == x.city__299 &&
+    cf.city__300 == x.city__300 &&
+    cf.city__302 == x.city__302 &&
+    cf.city__309 == x.city__309 &&
+    cf.city__310 == x.city__310 &&
+    cf.city__312 == x.city__312 &&
+    cf.city__314 == x.city__314 &&
+    cf.city__315 == x.city__315 &&
+    cf.city__319 == x.city__319 &&
+    cf.city__320 == x.city__320 &&
+    cf.city__323 == x.city__323 &&
+    cf.city__324 == x.city__324 &&
+    cf.city__327 == x.city__327 &&
+    cf.city__330 == x.city__330 &&
+    cf.city__331 == x.city__331 &&
+    cf.city__333 == x.city__333 &&
+    cf.city__338 == x.city__338 &&
+    cf.city__339 == x.city__339 &&
+    cf.city__341 == x.city__341 &&
+    cf.city__342 == x.city__342 &&
+    cf.city__346 == x.city__346 &&
+    cf.city__349 == x.city__349 &&
+    cf.city__351 == x.city__351 &&
+    cf.city__352 == x.city__352 &&
+    cf.city__357 == x.city__357 &&
+    cf.city__359 == x.city__359 &&
+    cf.city__360 == x.city__360 &&
+    cf.city__361 == x.city__361 &&
+    cf.city__364 == x.city__364 &&
+    cf.city__365 == x.city__365 &&
+    cf.city__366 == x.city__366 &&
+    cf.city__369 == x.city__369 &&
+    cf.city__370 == x.city__370 &&
+    cf.city__377 == x.city__377 &&
+    cf.city__378 == x.city__378 &&
+    cf.city__383 == x.city__383 &&
+    cf.city__384 == x.city__384 &&
+    cf.city__385 == x.city__385 &&
+    cf.city__387 == x.city__387 &&
+    cf.city__391 == x.city__391 &&
+    cf.city__393 == x.city__393 &&
+    cf.city__394 == x.city__394 &&
+    cf.city__396 == x.city__396 &&
+    cf.city__397 == x.city__397 &&
+    cf.city__399 == x.city__399 &&
+    cf.city__405 == x.city__405 &&
+    cf.city__408 == x.city__408 &&
+    cf.city__409 == x.city__409 &&
+    cf.city__412 == x.city__412 &&
+    cf.city__419 == x.city__419 &&
+    cf.city__420 == x.city__420 &&
+    cf.city__424 == x.city__424 &&
+    cf.city__425 == x.city__425 &&
+    cf.city__426 == x.city__426 &&
+    cf.city__427 == x.city__427 &&
+    cf.city__432 == x.city__432 &&
+    cf.city__433 == x.city__433 &&
+    cf.city__434 == x.city__434 &&
+    cf.city__435 == x.city__435 &&
+    cf.city__437 == x.city__437 &&
+    cf.city__441 == x.city__441 &&
+    cf.city__442 == x.city__442 &&
+    cf.city__447 == x.city__447 &&
+    cf.city__449 == x.city__449 &&
+    cf.city__450 == x.city__450 &&
+    cf.city__451 == x.city__451 &&
+    cf.city__460 == x.city__460 &&
+    cf.city__461 == x.city__461 &&
+    cf.city__467 == x.city__467 &&
+    cf.city__468 == x.city__468 &&
+    cf.city__469 == x.city__469 &&
+    cf.city__470 == x.city__470 &&
+    cf.city__471 == x.city__471 &&
+    cf.city__473 == x.city__473 &&
+    cf.city__474 == x.city__474 &&
+    cf.city__476 == x.city__476 &&
+    cf.city__479 == x.city__479 &&
+    cf.city__480 == x.city__480 &&
+    cf.city__481 == x.city__481 &&
+    cf.city__482 == x.city__482 &&
+    cf.city__486 == x.city__486 &&
+    cf.city__487 == x.city__487 &&
+    cf.city__489 == x.city__489 &&
+    cf.city__491 == x.city__491 &&
+    cf.city__497 == x.city__497 &&
+    cf.city__498 == x.city__498 &&
+    cf.city__499 == x.city__499 &&
+    cf.city__500 == x.city__500 &&
+    cf.city__504 == x.city__504 &&
+    cf.city__507 == x.city__507 &&
+    cf.city__508 == x.city__508 &&
+    cf.city__509 == x.city__509 &&
+    cf.city__512 == x.city__512 &&
+    cf.city__514 == x.city__514 &&
+    cf.city__515 == x.city__515 &&
+    cf.city__516 == x.city__516 &&
+    cf.city__519 == x.city__519 &&
+    cf.city__523 == x.city__523 &&
+    cf.city__525 == x.city__525 &&
+    cf.city__526 == x.city__526 &&
+    cf.city__527 == x.city__527 &&
+    cf.city__530 == x.city__530 &&
+    cf.city__531 == x.city__531 &&
+    cf.city__533 == x.city__533 &&
+    cf.city__536 == x.city__536 &&
+    cf.city__539 == x.city__539 &&
+    cf.city__540 == x.city__540 &&
+    cf.city__542 == x.city__542 &&
+    cf.city__543 == x.city__543 &&
+    cf.city__544 == x.city__544 &&
+    cf.city__545 == x.city__545 &&
+    cf.city__546 == x.city__546 &&
+    cf.city__547 == x.city__547 &&
+    cf.city__548 == x.city__548 &&
+    cf.city__550 == x.city__550 &&
+    cf.city__552 == x.city__552 &&
+    cf.city__556 == x.city__556 &&
+    cf.city__557 == x.city__557 &&
+    cf.city__560 == x.city__560 &&
+    cf.city__563 == x.city__563 &&
+    cf.city__566 == x.city__566 &&
+    cf.city__568 == x.city__568 &&
+    cf.city__570 == x.city__570 &&
+    cf.city__572 == x.city__572 &&
+    cf.city__573 == x.city__573 &&
+    cf.city__574 == x.city__574 &&
+    cf.city__580 == x.city__580 &&
+    cf.city__581 == x.city__581 &&
+    cf.city__582 == x.city__582 &&
+    cf.city__583 == x.city__583 &&
+    cf.city__586 == x.city__586 &&
+    cf.city__587 == x.city__587 &&
+    cf.city__588 == x.city__588 &&
+    cf.city__589 == x.city__589 &&
+    cf.city__591 == x.city__591 &&
+    cf.city__596 == x.city__596 &&
+    cf.city__598 == x.city__598 &&
+    cf.city__601 == x.city__601 &&
+    cf.city__603 == x.city__603 &&
+    cf.city__604 == x.city__604 &&
+    cf.city__606 == x.city__606 &&
+    cf.city__609 == x.city__609 &&
+    cf.city__610 == x.city__610 &&
+    cf.city__613 == x.city__613 &&
+    cf.city__614 == x.city__614 &&
+    cf.city__615 == x.city__615 &&
+    cf.city__623 == x.city__623 &&
+    cf.city__625 == x.city__625 &&
+    cf.city__628 == x.city__628 &&
+    cf.city__629 == x.city__629 &&
+    cf.city__630 == x.city__630 &&
+    cf.city__632 == x.city__632 &&
+    cf.city__633 == x.city__633 &&
+    cf.city__635 == x.city__635 &&
+    cf.city__636 == x.city__636 &&
+    cf.city__639 == x.city__639 &&
+    cf.city__641 == x.city__641 &&
+    cf.city__642 == x.city__642 &&
+    cf.city__643 == x.city__643 &&
+    cf.city__646 == x.city__646 &&
+    cf.city__647 == x.city__647 &&
+    cf.city__648 == x.city__648 &&
+    cf.city__650 == x.city__650 &&
+    cf.city__651 == x.city__651 &&
+    cf.city__652 == x.city__652 &&
+    cf.city__656 == x.city__656 &&
+    cf.city__662 == x.city__662 &&
+    cf.city__666 == x.city__666 &&
+    cf.city__667 == x.city__667 &&
+    cf.city__668 == x.city__668 &&
+    cf.city__670 == x.city__670 &&
+    cf.city__678 == x.city__678 &&
+    cf.city__680 == x.city__680 &&
+    cf.city__681 == x.city__681 &&
+    cf.city__682 == x.city__682 &&
+    cf.city__685 == x.city__685 &&
+    cf.city__686 == x.city__686 &&
+    cf.city__688 == x.city__688 &&
+    cf.city__690 == x.city__690 &&
+    cf.city__692 == x.city__692 &&
+    cf.city__696 == x.city__696 &&
+    cf.city__697 == x.city__697 &&
+    cf.city__698 == x.city__698 &&
+    cf.city__699 == x.city__699 &&
+    cf.city__702 == x.city__702 &&
+    cf.city__703 == x.city__703 &&
+    cf.city__704 == x.city__704 &&
+    cf.city__705 == x.city__705 &&
+    cf.city__707 == x.city__707 &&
+    cf.city__708 == x.city__708 &&
+    cf.city__710 == x.city__710 &&
+    cf.city__714 == x.city__714 &&
+    cf.city__723 == x.city__723 &&
+    cf.city__726 == x.city__726 &&
+    cf.city__730 == x.city__730 &&
+    cf.city__734 == x.city__734 &&
+    cf.city__736 == x.city__736 &&
+    cf.city__738 == x.city__738 &&
+    cf.city__743 == x.city__743 &&
+    cf.city__744 == x.city__744 &&
+    cf.city__745 == x.city__745 &&
+    cf.city__746 == x.city__746 &&
+    cf.city__751 == x.city__751 &&
+    cf.city__756 == x.city__756 &&
+    cf.city__765 == x.city__765 &&
+    cf.city__766 == x.city__766 &&
+    cf.city__769 == x.city__769 &&
+    cf.city__770 == x.city__770 &&
+    cf.city__771 == x.city__771 &&
+    cf.city__774 == x.city__774 &&
+    cf.city__776 == x.city__776 &&
+    cf.city__777 == x.city__777 &&
+    cf.city__779 == x.city__779 &&
+    cf.city__780 == x.city__780 &&
+    cf.city__781 == x.city__781 &&
+    cf.city__782 == x.city__782 &&
+    cf.city__783 == x.city__783 &&
+    cf.city__784 == x.city__784 &&
+    cf.city__787 == x.city__787 &&
+    cf.city__788 == x.city__788 &&
+    cf.city__791 == x.city__791 &&
+    cf.city__797 == x.city__797 &&
+    cf.city__799 == x.city__799 &&
+    cf.city__810 == x.city__810 &&
+    cf.city__811 == x.city__811 &&
+    cf.city__813 == x.city__813 &&
+    cf.city__814 == x.city__814 &&
+    cf.city__817 == x.city__817 &&
+    cf.city__818 == x.city__818 &&
+    cf.city__820 == x.city__820 &&
+    cf.city__821 == x.city__821 &&
+    cf.city__822 == x.city__822 &&
+    cf.city__823 == x.city__823 &&
+    cf.city__831 == x.city__831 &&
+    cf.city__836 == x.city__836 &&
+    cf.city__837 == x.city__837 &&
+    cf.city__849 == x.city__849 &&
+    cf.city__856 == x.city__856 &&
+    cf.city__857 == x.city__857 &&
+    cf.city__858 == x.city__858 &&
+    cf.city__861 == x.city__861 &&
+    cf.city__866 == x.city__866 &&
+    cf.city__867 == x.city__867 &&
+    cf.city__869 == x.city__869 &&
+    cf.city__871 == x.city__871 &&
+    cf.city__872 == x.city__872 &&
+    cf.city__873 == x.city__873 &&
+    cf.city__874 == x.city__874 &&
+    cf.city__875 == x.city__875 &&
+    cf.city__877 == x.city__877 &&
+    cf.city__878 == x.city__878 &&
+    cf.city__881 == x.city__881 &&
+    cf.city__883 == x.city__883 &&
+    cf.city__884 == x.city__884 &&
+    cf.city__886 == x.city__886 &&
+    cf.city__891 == x.city__891 &&
+    cf.city__893 == x.city__893 &&
+    cf.city__894 == x.city__894 &&
+    cf.city__896 == x.city__896 &&
+    cf.city__899 == x.city__899 &&
+    cf.city__900 == x.city__900 &&
+    cf.city__901 == x.city__901 &&
+    cf.city__902 == x.city__902 &&
+    cf.city__906 == x.city__906 &&
+    cf.city__908 == x.city__908 &&
+    cf.city__910 == x.city__910 &&
+    cf.city__913 == x.city__913 &&
+    cf.city__915 == x.city__915 &&
+    cf.city__927 == x.city__927 &&
+    cf.city__928 == x.city__928 &&
+    cf.city__932 == x.city__932 &&
+    cf.city__935 == x.city__935 &&
+    cf.city__937 == x.city__937 &&
+    cf.city__938 == x.city__938 &&
+    cf.city__939 == x.city__939 &&
+    cf.city__940 == x.city__940 &&
+    cf.city__944 == x.city__944 &&
+    cf.city__947 == x.city__947 &&
+    cf.city__950 == x.city__950 &&
+    cf.city__954 == x.city__954 &&
+    cf.city__956 == x.city__956 &&
+    cf.city__958 == x.city__958 &&
+    cf.city__959 == x.city__959 &&
+    cf.city__960 == x.city__960 &&
+    cf.city__965 == x.city__965 &&
+    cf.city__967 == x.city__967 &&
+    cf.city__968 == x.city__968 &&
+    cf.city__969 == x.city__969 &&
+    cf.city__970 == x.city__970 &&
+    cf.city__971 == x.city__971 &&
+    cf.city__977 == x.city__977 &&
+    cf.city__979 == x.city__979 &&
+    cf.city__981 == x.city__981 &&
+    cf.city__983 == x.city__983 &&
+    cf.city__984 == x.city__984 &&
+    cf.city__990 == x.city__990 &&
+    cf.city__992 == x.city__992 &&
+    cf.city__994 == x.city__994 &&
+    cf.city__995 == x.city__995 &&
+    cf.city__996 == x.city__996 &&
+    cf.city__998 == x.city__998 &&
+    cf.city__999 == x.city__999 &&
+    cf.city__1002 == x.city__1002 &&
+    cf.city__1003 == x.city__1003 &&
+    cf.city__1004 == x.city__1004 &&
+    cf.city__1005 == x.city__1005 &&
+    cf.city__1006 == x.city__1006 &&
+    cf.city__1007 == x.city__1007 &&
+    cf.city__1011 == x.city__1011 &&
+    cf.city__1012 == x.city__1012 &&
+    cf.city__1015 == x.city__1015 &&
+    cf.city__1016 == x.city__1016 &&
+    cf.city__1017 == x.city__1017 &&
+    cf.city__1022 == x.city__1022 &&
+    cf.city__1023 == x.city__1023 &&
+    cf.city__1024 == x.city__1024 &&
+    cf.city__1025 == x.city__1025 &&
+    cf.city__1026 == x.city__1026 &&
+    cf.city__1030 == x.city__1030 &&
+    cf.city__1035 == x.city__1035 &&
+    cf.city__1036 == x.city__1036 &&
+    cf.city__1037 == x.city__1037 &&
+    cf.city__1038 == x.city__1038 &&
+    cf.city__1039 == x.city__1039 &&
+    cf.city__1042 == x.city__1042 &&
+    cf.city__1045 == x.city__1045 &&
+    cf.city__1047 == x.city__1047 &&
+    cf.city__1048 == x.city__1048 &&
+    cf.city__1049 == x.city__1049 &&
+    cf.city__1054 == x.city__1054 &&
+    cf.city__1057 == x.city__1057 &&
+    cf.city__1058 == x.city__1058 &&
+    cf.city__1059 == x.city__1059 &&
+    cf.city__1062 == x.city__1062 &&
+    cf.city__1063 == x.city__1063 &&
+    cf.city__1065 == x.city__1065 &&
+    cf.city__1066 == x.city__1066 &&
+    cf.city__1067 == x.city__1067 &&
+    cf.city__1068 == x.city__1068 &&
+    cf.city__1070 == x.city__1070 &&
+    cf.city__1071 == x.city__1071 &&
+    cf.city__1072 == x.city__1072 &&
+    cf.city__1075 == x.city__1075 &&
+    cf.city__1077 == x.city__1077 &&
+    cf.city__1078 == x.city__1078 &&
+    cf.city__1079 == x.city__1079 &&
+    cf.city__1080 == x.city__1080 &&
+    cf.city__1082 == x.city__1082 &&
+    cf.city__1083 == x.city__1083 &&
+    cf.city__1084 == x.city__1084 &&
+    cf.city__1087 == x.city__1087 &&
+    cf.city__1091 == x.city__1091)
+
+@PLAF(p,
+cf.state_id__1 == x.state_id__1 &&
+cf.state_id__4 == x.state_id__4 &&
+cf.state_id__6 == x.state_id__6 &&
+cf.state_id__7 == x.state_id__7 &&
+cf.state_id__8 == x.state_id__8 &&
+cf.state_id__9 == x.state_id__9 &&
+cf.state_id__10 == x.state_id__10 &&
+cf.state_id__11 == x.state_id__11 &&
+cf.state_id__12 == x.state_id__12 &&
+cf.state_id__13 == x.state_id__13 &&
+cf.state_id__14 == x.state_id__14 &&
+cf.state_id__15 == x.state_id__15 &&
+cf.state_id__16 == x.state_id__16 &&
+cf.state_id__21 == x.state_id__21 &&
+cf.state_id__22 == x.state_id__22 &&
+cf.state_id__23 == x.state_id__23 &&
+cf.state_id__24 == x.state_id__24 &&
+cf.state_id__25 == x.state_id__25 &&
+cf.state_id__28 == x.state_id__28 &&
+cf.state_id__29 == x.state_id__29 &&
+cf.state_id__30 == x.state_id__30 &&
+cf.state_id__32 == x.state_id__32 &&
+cf.state_id__33 == x.state_id__33 &&
+cf.state_id__34 == x.state_id__34 &&
+cf.state_id__36 == x.state_id__36 &&
+cf.state_id__38 == x.state_id__38 &&
+cf.state_id__39 == x.state_id__39 &&
+cf.state_id__41 == x.state_id__41 &&
+cf.state_id__42 == x.state_id__42 &&
+cf.state_id__43 == x.state_id__43 &&
+cf.state_id__44 == x.state_id__44 &&
+cf.state_id__45 == x.state_id__45 &&
+cf.state_id__46 == x.state_id__46 &&
+cf.state_id__47 == x.state_id__47 &&
+cf.state_id__48 == x.state_id__48 &&
+cf.state_id__49 == x.state_id__49 &&
+cf.state_id__51 == x.state_id__51 &&
+cf.state_id__52 == x.state_id__52 &&
+cf.state_id__53 == x.state_id__53 &&
+cf.state_id__56 == x.state_id__56 &&
+cf.state_id__60 == x.state_id__60 &&
+cf.state_id__61 == x.state_id__61 &&
+cf.state_id__62 == x.state_id__62 &&
+cf.state_id__64 == x.state_id__64 &&
+cf.state_id__65 == x.state_id__65 &&
+cf.state_id__66 == x.state_id__66)

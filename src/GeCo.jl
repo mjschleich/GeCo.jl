@@ -15,6 +15,10 @@ const NUM_EXTRA_FEASIBLE_SPACE_COL = 2
 include("components/plaf.jl")
 export @PLAF, @GROUP, PLAFProgram, initPLAF
 
+# Implementation of the Δ-representation
+include("dataManager/DataManager.jl")
+export materialize, DataManager
+
 # Implements the struct for features and feature groups, as well as the methods to initializeFeatures
 include("components/feasibleSpace.jl")
 export feasibleSpace, initDomains, ground, FeatureGroup, applyConstraint, initGroups
@@ -22,10 +26,6 @@ export feasibleSpace, initDomains, ground, FeatureGroup, applyConstraint, initGr
 # Implements the struct for features and feature groups, as well as the methods to initializeFeatures
 include("components/actionCascade.jl")
 export GroundedImplication, actionCascade
-
-# Implementation of the Δ-representation
-include("dataManager/DataManager.jl")
-export materialize, DataManager
 
 # Implements partial evaluation for Random Forest Classifiers
 include("classifier/RandomForestEval.jl")

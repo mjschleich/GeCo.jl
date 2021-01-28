@@ -9,6 +9,7 @@
 using Pkg; Pkg.activate(".")
 using GeCo, DataFrames, JLD
 
+
 function classifier_ordinal(instances::DataFrame)
     ranges = Dict([(:AgeGroup, 3), (:EducationLevel,3), (:MaxBillAmountOverLast6Months, 50810.0),
                     (:MaxPaymentAmountOverLast6Months, 51430.0), (:MonthsWithZeroBalanceOverLast6Months,6.0),
@@ -65,7 +66,8 @@ function classifier_combined(instances::DataFrame)
                 max(0,3-instances[i,:AgeGroup]) / ranges[:AgeGroup],
                 max(0,1500-instances[i,:MostRecentBillAmount]) / ranges[:MostRecentBillAmount],
                 max(0,5-instances[i,:TotalMonthsOverdue]) / ranges[:TotalMonthsOverdue]])
-            score[i] =  0.5 - 0.5 * norm_distance
+
+            score[i] =  max(0, 0.5 - norm_distance)
         end
     end
     return score
@@ -90,11 +92,11 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds, direction;
 
 
     for i in 1:nrow(X)
-        if (explained >= 10)
+        if (explained >= 1000)
             break
         end
 
-        if predictions[i] == 1 || any(X[i,sym] >= thresholds[j] for (j,sym) in enumerate(symbols))
+        if predictions[i] == 1 || any(X[i,sym] >= thresholds[sym] for sym in symbols)
             continue
         end
 
@@ -102,8 +104,7 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds, direction;
 
         # run geco on that
         (explanation, count, generation, rep_size) = explain(orig_instance, X, p, classifier;
-            norm_ratio=norm_ratio,
-            min_num_generations=10)
+            norm_ratio=norm_ratio)
 
         changed = 0
         for i in 1:num_features
@@ -114,25 +115,25 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds, direction;
 
         changed_needed = 0
         optimal_cf = deepcopy(orig_instance)
-        for (j,sym) in enumerate(symbols)
-            if direction[j] == 1
-                if orig_instance[sym] <= thresholds[j]
+        for sym in symbols
+            # if direction[j] == 1
+                if orig_instance[sym] <= thresholds[sym]
                     changed_needed += 1
-                    optimal_cf[sym] = thresholds[j]
+                    optimal_cf[sym] = thresholds[sym]
                 end
-            else
-                if orig_instance[sym] > thresholds[j]
-                    changed_needed += 1
-                    optimal_cf[sym] = thresholds[j]
-                end
-            end
+            # else
+            #     if orig_instance[sym] >= thresholds[sym]
+            #         changed_needed += 1
+            #         optimal_cf[sym] = thresholds[sym]
+            #     end
+            # end
 
             # println("Symbol: $sym optimal: $(thresholds[j]) exp: $(explanation[1,sym]) orig: $(orig_instance[sym])")
 
         end
 
-        println("Symbol: $symbols\n exp: $(explanation[1,symbols])\n orig: $(orig_instance[symbols])\n")
-        println("Correct Outcome: $(explanation[1, :outc]) \n\n")
+        # println("Symbol: $symbols\n exp: $(explanation[1,symbols])\n orig: $(orig_instance[symbols])\n")
+        # println("Correct Outcome: $(explanation[1, :outc]) \n\n")
 
         dist_to_original = distance(explanation[1, :], orig_instance, num_features, ranges; norm_ratio=norm_ratio)
         dist_to_optimal = distance(explanation[1, :], optimal_cf, num_features, ranges; norm_ratio=[0,1.0,0,0])
@@ -159,19 +160,17 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds, direction;
         ")
 end
 
-include("../scripts/credit/credit_setup_MACE.jl");
+include("../credit/credit_setup_MACE.jl");
 
 # groundTruthExperiment(X, p, classifier_ordinal, [:AgeGroup], [3], [1])
-
 # groundTruthExperiment(X, p, classifier_numerical, [:MaxBillAmountOverLast6Months], [3000], [1])
-
 groundTruthExperiment(X,
     PLAFProgram(),
     classifier_combined,
     [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue],
-    [1500, 3, 1500, 5],
+    Dict(:MaxBillAmountOverLast6Months => 1500, :AgeGroup => 3, :MostRecentBillAmount => 1500, :TotalMonthsOverdue => 5),
     [1, 1, 1, 1];
-    norm_ratio=[0.1,0.9,0,0])
+    norm_ratio=[0.2,0.8,0,0])
 
 
 

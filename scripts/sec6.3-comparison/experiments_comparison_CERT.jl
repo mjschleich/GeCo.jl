@@ -1,4 +1,4 @@
-include("../competitors/naive_geco/NaiveGeco.jl")
+include("../../competitors/naive_geco/NaiveGeco.jl")
 
 function runExperimentCERT(X::DataFrame, p::PLAFProgram, desired_class::Int64, dataset_name::String)
 

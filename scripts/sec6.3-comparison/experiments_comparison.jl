@@ -10,7 +10,7 @@ include("experiments_comparison_WIT.jl")
 include("experiments_comparison_CERT.jl")
 
 for dataset in ["adult", "credit"]
-    include("$dataset/$(dataset)_setup_MACE.jl")
+    include("../$dataset/$(dataset)_setup_MACE.jl")
 
     Xcopy = DataFrame(X)
 

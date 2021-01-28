@@ -7,8 +7,7 @@
 # -- maybe: experiments with monotonicty  (for later)
 
 using Pkg; Pkg.activate(".")
-using GeCo
-using JLD
+using GeCo, DataFrames, JLD
 
 function classifier_ordinal(instances::DataFrame)
     ranges = Dict([(:AgeGroup, 3), (:EducationLevel,3), (:MaxBillAmountOverLast6Months, 50810.0),

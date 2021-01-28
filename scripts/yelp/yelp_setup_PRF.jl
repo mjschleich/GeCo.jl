@@ -59,3 +59,5 @@ orig_instance = X[536, :]
 
 partial_classifier = initPartialRandomForestEval(classifier, orig_instance, 1);
 full_classifier = initRandomForestEval(classifier, orig_instance, 1);
+
+include("yelp_constraints.jl")

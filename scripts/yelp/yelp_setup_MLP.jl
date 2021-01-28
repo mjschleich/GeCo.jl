@@ -63,4 +63,4 @@ println(first_neg)
 orig_instance = X[first_neg,:]
 classifier = initMLPEval(mlj_classifier,orig_instance)
 
-
+include("yelp_constraints.jl")

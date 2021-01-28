@@ -67,6 +67,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
     max_num_generations::Int64=100,
     min_num_generations::Int64=3,
     max_num_samples::Int64=5,
+    max_samples_init::Int64=20,
     convergence_k::Int=5,
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     domains::Vector{DataFrame}=Vector{DataFrame}(),
@@ -92,7 +93,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
         feasible_space = @time feasibleSpace(data, orig_instance, program; domains=domains)
 
         print("-- Time init pop:\t")
-        population = @time initialPopulation(orig_instance, feasible_space; compress_data=compress_data)
+        population = @time initialPopulation(orig_instance, feasible_space; compress_data=compress_data, max_num_samples=max_samples_init)
 
         count += size(population,1)
         representation_size[1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
@@ -159,7 +160,9 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
 
         feasible_space = feasibleSpace(data, orig_instance, program; domains=domains)
 
-        prep_time = @elapsed (population) = initialPopulation(orig_instance, feasible_space; compress_data=compress_data)
+        prep_time = @elapsed (population) =
+            initialPopulation(orig_instance, feasible_space;
+                compress_data=compress_data)
 
         count += size(population,1)
         representation_size[1] = (compress_data ? size(population,2) : nrow(population) * ncol(population))
@@ -178,7 +181,9 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             end
 
             if run_mutation
-                mtime = @elapsed mutation!(population, feasible_space; max_num_samples = max_num_samples)
+                mtime = @elapsed mutation!(population, feasible_space;
+                    max_num_samples = max_num_samples)
+
                 mutation_time += mtime
             end
 
@@ -186,8 +191,12 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             count += max(0, size_pop[1] - k)
             representation_size[generation+1] = (compress_data ? size_pop[2] : size_pop[1] * size_pop[2])
 
-            stime = @elapsed (converged) = selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
-                norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
+            stime = @elapsed (converged) =
+                selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
+                    norm_ratio=norm_ratio,
+                    distance_temp=distance_temp,
+                    convergence_k=convergence_k)
+
             selection_time += stime
 
             generation += 1

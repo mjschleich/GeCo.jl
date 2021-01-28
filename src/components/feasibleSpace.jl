@@ -96,12 +96,13 @@ end
 function initDomains(groups::Vector{FeatureGroup}, data::DataFrame)::Vector{DataFrame}
     domains = Vector{DataFrame}(undef, length(groups))
     for (gidx, group) in enumerate(groups)
-        feat_syms = group.features
+        feat_syms = group.names
         if length(feat_syms) > 1000
-            domains[gidx] = data[!, feat_syms]
+            domains[gidx] = data[:, feat_syms]
             domains[gidx].count = ones(Int64, nrow(data))
+            domains[gidx] = unique(domains[gidx])
         else
-            domains[gidx] = combine(groupby(data[!,[feat_syms...]], [feat_syms...]), nrow => :count)
+            domains[gidx] = combine(groupby(data[!,feat_syms], feat_syms), nrow => :count)
         end
     end
     return domains
@@ -210,7 +211,7 @@ function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFP
 
     for (gidx, group) in enumerate(groups)
 
-        features = [group.features...]
+        features = group.names
         fspace = filter(row -> row[features] != orig_instance[features], domains[gidx])
 
         for (cidx, constraint) in enumerate(constraints)

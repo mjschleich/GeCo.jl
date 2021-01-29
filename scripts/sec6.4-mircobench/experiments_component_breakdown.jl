@@ -7,7 +7,7 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
 
     if isfile("data/$dataset_name/domains.jld")
         println("Loading domains from file: ../../data/$dataset_name/domains.jld ($(Dates.now()))")
-        d = load("data/$dataset_name/domains.jld")
+        d = JLD.load("data/$dataset_name/domains.jld")
         domains = d["domains"]
     else
         println("Initializing Domains: ($(Dates.now()))")

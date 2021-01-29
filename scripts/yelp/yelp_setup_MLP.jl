@@ -43,24 +43,24 @@ train, test = partition(eachindex(y), 0.7, shuffle=true)
 
 # load the model
 @sk_import neural_network: MLPClassifier
-mlj_classifier=MLPClassifier()
+classifier=MLPClassifier()
 #mlj_classifier=MLPClassifier(hidden_layer_sizes=(10,10))
 
 # train
-ScikitLearn.fit!(mlj_classifier,MLJ.matrix(X[train]),vec(collect(Int, y[train])))
+ScikitLearn.fit!(classifier,MLJ.matrix(X[train]),vec(collect(Int, y[train])))
 
 ## Evaluation:
-yhat_train = ScikitLearn.predict(mlj_classifier, MLJ.matrix(X[train,:]))
-yhat_test = ScikitLearn.predict(mlj_classifier, MLJ.matrix(X[test,:]))
+yhat_train = ScikitLearn.predict(classifier, MLJ.matrix(X[train,:]))
+yhat_test = ScikitLearn.predict(classifier, MLJ.matrix(X[test,:]))
 
 println("Accuracy train data: $(mean(yhat_train .== y[train]))")
 println("Accuracy test data: $(mean(yhat_test .== y[test]))")
 
-yhat = ScikitLearn.predict(mlj_classifier, MLJ.matrix(X))
+yhat = ScikitLearn.predict(classifier, MLJ.matrix(X))
 first_neg = findfirst(yhat .!= 1)
 println(first_neg)
 
 orig_instance = X[first_neg,:]
-classifier = initMLPEval(mlj_classifier,orig_instance)
+partial_classifier = initMLPEval(classifier,orig_instance)
 
 include("yelp_constraints.jl")

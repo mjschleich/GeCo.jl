@@ -26,7 +26,7 @@ y, X = unpack(data_train, ==(:NoClaim), colname -> true);
 X.Cat12[ismissing.(X.Cat12)] .= "?"
 X.Cat12 = convert.(String,X.Cat12)
 
-onehot_features = [:Cat1,:Cat2,:Cat3,:Cat4,:Cat5,:Cat6,:Cat7,:Cat8,:Cat9,:Cat10,:Cat11,:Cat12,:Blind_Make, :Blind_Model]
+onehot_features = [:Cat1,:Cat2,:Cat3,:Cat4,:Cat5,:Cat6,:Cat7,:Cat8,:Cat9,:Cat10,:Cat11,:Cat12,:Blind_Make,:Model]
 
 coerce!(X,
     :Cat1 => Multiclass,
@@ -42,7 +42,7 @@ coerce!(X,
     :Cat11 => Multiclass,
     :Cat12 => Multiclass,
     :Blind_Make => Multiclass,
-    :Blind_Model => Multiclass
+    :Model => Multiclass
     )
 
 # change the target to the desired

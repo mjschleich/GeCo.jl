@@ -1,7 +1,7 @@
 p = PLAFProgram()
 
 @GROUP(p, s for s in propertynames(X) if contains(string(s), "Blind_Make"))
-@GROUP(p, s for s in propertynames(X) if contains(string(s), "Blind_Model"))
+@GROUP(p, s for s in propertynames(X) if contains(string(s), "Model"))
 @GROUP(p, s for s in propertynames(X) if contains(string(s), "Cat1_"))
 @GROUP(p, s for s in propertynames(X) if contains(string(s), "Cat2"))
 @GROUP(p, s for s in propertynames(X) if contains(string(s), "Cat3"))

@@ -6,7 +6,6 @@ p = PLAFProgram()
 
 @PLAF(p, cf.latitude == x.latitude)
 @PLAF(p, cf.longitude == x.longitude)
-
 @PLAF(p, cf.year_joined == x.year_joined)
 
 @PLAF(p, cf.reviewcount >= x.reviewcount)
@@ -525,49 +524,53 @@ p = PLAFProgram()
     cf.city__1091 == x.city__1091)
 
 @PLAF(p,
-cf.state_id__1 == x.state_id__1 &&
-cf.state_id__4 == x.state_id__4 &&
-cf.state_id__6 == x.state_id__6 &&
-cf.state_id__7 == x.state_id__7 &&
-cf.state_id__8 == x.state_id__8 &&
-cf.state_id__9 == x.state_id__9 &&
-cf.state_id__10 == x.state_id__10 &&
-cf.state_id__11 == x.state_id__11 &&
-cf.state_id__12 == x.state_id__12 &&
-cf.state_id__13 == x.state_id__13 &&
-cf.state_id__14 == x.state_id__14 &&
-cf.state_id__15 == x.state_id__15 &&
-cf.state_id__16 == x.state_id__16 &&
-cf.state_id__21 == x.state_id__21 &&
-cf.state_id__22 == x.state_id__22 &&
-cf.state_id__23 == x.state_id__23 &&
-cf.state_id__24 == x.state_id__24 &&
-cf.state_id__25 == x.state_id__25 &&
-cf.state_id__28 == x.state_id__28 &&
-cf.state_id__29 == x.state_id__29 &&
-cf.state_id__30 == x.state_id__30 &&
-cf.state_id__32 == x.state_id__32 &&
-cf.state_id__33 == x.state_id__33 &&
-cf.state_id__34 == x.state_id__34 &&
-cf.state_id__36 == x.state_id__36 &&
-cf.state_id__38 == x.state_id__38 &&
-cf.state_id__39 == x.state_id__39 &&
-cf.state_id__41 == x.state_id__41 &&
-cf.state_id__42 == x.state_id__42 &&
-cf.state_id__43 == x.state_id__43 &&
-cf.state_id__44 == x.state_id__44 &&
-cf.state_id__45 == x.state_id__45 &&
-cf.state_id__46 == x.state_id__46 &&
-cf.state_id__47 == x.state_id__47 &&
-cf.state_id__48 == x.state_id__48 &&
-cf.state_id__49 == x.state_id__49 &&
-cf.state_id__51 == x.state_id__51 &&
-cf.state_id__52 == x.state_id__52 &&
-cf.state_id__53 == x.state_id__53 &&
-cf.state_id__56 == x.state_id__56 &&
-cf.state_id__60 == x.state_id__60 &&
-cf.state_id__61 == x.state_id__61 &&
-cf.state_id__62 == x.state_id__62 &&
-cf.state_id__64 == x.state_id__64 &&
-cf.state_id__65 == x.state_id__65 &&
-cf.state_id__66 == x.state_id__66)
+    cf.state_id__1 == x.state_id__1 &&
+    cf.state_id__4 == x.state_id__4 &&
+    cf.state_id__6 == x.state_id__6 &&
+    cf.state_id__7 == x.state_id__7 &&
+    cf.state_id__8 == x.state_id__8 &&
+    cf.state_id__9 == x.state_id__9 &&
+    cf.state_id__10 == x.state_id__10 &&
+    cf.state_id__11 == x.state_id__11 &&
+    cf.state_id__12 == x.state_id__12 &&
+    cf.state_id__13 == x.state_id__13 &&
+    cf.state_id__14 == x.state_id__14 &&
+    cf.state_id__15 == x.state_id__15 &&
+    cf.state_id__16 == x.state_id__16 &&
+    cf.state_id__21 == x.state_id__21 &&
+    cf.state_id__22 == x.state_id__22 &&
+    cf.state_id__23 == x.state_id__23 &&
+    cf.state_id__24 == x.state_id__24 &&
+    cf.state_id__25 == x.state_id__25 &&
+    cf.state_id__28 == x.state_id__28 &&
+    cf.state_id__29 == x.state_id__29 &&
+    cf.state_id__30 == x.state_id__30 &&
+    cf.state_id__32 == x.state_id__32 &&
+    cf.state_id__33 == x.state_id__33 &&
+    cf.state_id__34 == x.state_id__34 &&
+    cf.state_id__36 == x.state_id__36 &&
+    cf.state_id__38 == x.state_id__38 &&
+    cf.state_id__39 == x.state_id__39 &&
+    cf.state_id__41 == x.state_id__41 &&
+    cf.state_id__42 == x.state_id__42 &&
+    cf.state_id__43 == x.state_id__43 &&
+    cf.state_id__44 == x.state_id__44 &&
+    cf.state_id__45 == x.state_id__45 &&
+    cf.state_id__46 == x.state_id__46 &&
+    cf.state_id__47 == x.state_id__47 &&
+    cf.state_id__48 == x.state_id__48 &&
+    cf.state_id__49 == x.state_id__49 &&
+    cf.state_id__51 == x.state_id__51 &&
+    cf.state_id__52 == x.state_id__52 &&
+    cf.state_id__53 == x.state_id__53 &&
+    cf.state_id__56 == x.state_id__56 &&
+    cf.state_id__60 == x.state_id__60 &&
+    cf.state_id__61 == x.state_id__61 &&
+    cf.state_id__62 == x.state_id__62 &&
+    cf.state_id__64 == x.state_id__64 &&
+    cf.state_id__65 == x.state_id__65 &&
+    cf.state_id__66 == x.state_id__66)
+
+@PLAF(p, if cf.reviewcount > x.reviewcount;  cf.is_open .>= x.is_open end)
+@PLAF(p, if cf.cool > x.cool; cf.compliment_cool > x.compliment_cool end)
+@PLAF(p, if cf.funny > x.funny; cf.compliment_funny > x.compliment_funny end)

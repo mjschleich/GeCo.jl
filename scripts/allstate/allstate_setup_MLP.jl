@@ -1,7 +1,7 @@
 using Statistics, DataFrames, MLJ, ScikitLearn, Serialization
 import Dates
 
-const loadData = true
+const loadData = false
 const path = "data/allstate"
 
 if loadData
@@ -37,7 +37,7 @@ for layer_sizes in [(10,10), (100,), (100,10), (100,100), (200,), (200,10), (200
     println("Accuracy train data: $(mean(yhat_train .== y[train])) -- ($(Dates.now()))")
     println("Accuracy test data: $(mean(yhat_test .== y[test]))\n")
 
-    serialize(path*"/mlp_classifier_$(layer_sizes).bin",  classifer)
+    serialize(path*"/mlp_classifier_$(layer_sizes).bin",  classifier)
 end
 
 # yhat = ScikitLearn.predict(classifier, MLJ.matrix(X))

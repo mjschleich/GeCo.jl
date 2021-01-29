@@ -6,8 +6,8 @@ import Dates, JLD, PyCall
 function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, dataset_name::String, model::String, desired_class::Int64)
 
     if isfile("data/$dataset_name/domains.jld")
-        println("Loading domains from file: ../../data/$dataset_name/domains.jld ($(Dates.now()))")
-        d = load("data/$dataset_name/domains.jld")
+        println("Loading domains from file: data/$dataset_name/domains.jld ($(Dates.now()))")
+        d = JLD.load("data/$dataset_name/domains.jld")
         domains = d["domains"]
     else
         println("Initializing Domains: ($(Dates.now()))")

@@ -26,7 +26,11 @@ y, X = unpack(data_train, ==(:NoClaim), colname -> true);
 X.Cat12[ismissing.(X.Cat12)] .= "?"
 X.Cat12 = convert.(String,X.Cat12)
 
+<<<<<<< HEAD
 onehot_features = [:Cat1,:Cat2,:Cat3,:Cat4,:Cat5,:Cat6,:Cat7,:Cat8,:Cat9,:Cat10,:Cat11,:Cat12,:Blind_Make,:Model]
+=======
+onehot_features = [:Cat1,:Cat2,:Cat3,:Cat4,:Cat5,:Cat6,:Cat7,:Cat8,:Cat9,:Cat10,:Cat11,:Cat12,:Blind_Make, :Model]
+>>>>>>> 5e88bc3a94a2adcee9aac3d584a8562891448a1e
 
 coerce!(X,
     :Cat1 => Multiclass,

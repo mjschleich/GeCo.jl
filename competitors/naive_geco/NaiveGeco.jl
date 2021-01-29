@@ -127,10 +127,8 @@ function explain_naive(orig_instance::DataFrameRow, data::DataFrame, program::PL
 
         mutation_naive!(population, data, feasible_space)
 
-        # println("---> ", size(population))
         selection_naive!(population, k, orig_instance, classifier, desired_class, feasible_space;
             norm_ratio=norm_ratio, distance_temp=distance_temp)
-        # println("<--- ", size(population))
 
     end
     return population

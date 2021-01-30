@@ -1,40 +1,18 @@
 using CSV, Statistics, DataFrames, MLJ, ScikitLearn
 
-path = "data/yelp"
-data = CSV.File(path*"/yelp_data.csv"; limit=1000000) |> DataFrame
-data.high_ranking = Int64.(data.review_stars .> 3)
 
-## Reduce number of cities:
-city_gb = combine(groupby( data, :city_id), nrow => :count)
-sort!(city_gb, :count, rev=true)
-top_cities = city_gb.city_id[1:499]
-data.city = [(city in top_cities) ? city : 500 for city in data.city_id]
+const loadData = true
+const path = "data/yelp"
 
-## Reduce number of categories:
-categ_gb = combine(groupby(data, :category_id), nrow => :count)
-sort!(categ_gb, :count, rev=true)
-top_categories = categ_gb.category_id[1:499]
-data.category = [(categ in top_categories) ? categ : 500 for categ in data.category_id]
+if loadData
+    include("yelp_data_load.jl")
 
-select!(data, Not([:review_stars,:business_id,:user_id,:review_id,:category_id, :city_id]))
-
-y, X = unpack(data, ==(:high_ranking), colname -> true);
-y = categorical(y)
-
-# change the input to the type they want
-coerce!(X,
-    :city => Multiclass,
-    :state_id => Multiclass,
-    :category => Multiclass
-)
-
-onehot_columns = [:city, :state_id, :category]
-
-# one-hot encode
-onehot_encoder = OneHotEncoder(; features=onehot_columns, drop_last=false, ordered_factor=false)
-onehot_machine = machine(onehot_encoder, X)
-MLJ.fit!(onehot_machine)
-X = MLJ.transform(onehot_machine, X)
+    serialize(path*"/train_data.bin", X)
+    serialize(path*"/train_data_y.bin", y)
+else
+    X = deserialize(path*"/train_data.bin")
+    y = deserialize(path*"/train_data_y.bin")
+end
 
 println("Learning the model")
 
@@ -43,24 +21,30 @@ train, test = partition(eachindex(y), 0.7, shuffle=true)
 
 # load the model
 @sk_import neural_network: MLPClassifier
-classifier=MLPClassifier()
-#mlj_classifier=MLPClassifier(hidden_layer_sizes=(10,10))
 
-# train
-ScikitLearn.fit!(classifier,MLJ.matrix(X[train]),vec(collect(Int, y[train])))
+for layer_sizes in [(10,10), (100,), (100,10), (100,100), (200,), (200,10), (200,100), (100,100,10)]
 
-## Evaluation:
-yhat_train = ScikitLearn.predict(classifier, MLJ.matrix(X[train,:]))
-yhat_test = ScikitLearn.predict(classifier, MLJ.matrix(X[test,:]))
+    println("Yelp: Layer Sizes: $(layer_sizes) -- ($(Dates.now()))")
+    classifier=MLPClassifier(hidden_layer_sizes=layer_sizes)
 
-println("Accuracy train data: $(mean(yhat_train .== y[train]))")
-println("Accuracy test data: $(mean(yhat_test .== y[test]))")
+    # train
+    # ScikitLearn.fit!(classifier,MLJ.matrix(X[train]),vec(collect(Int, y[train])))
+    ScikitLearn.fit!(classifier,MLJ.matrix(X),vec(collect(Int, y)))
 
-yhat = ScikitLearn.predict(classifier, MLJ.matrix(X))
-first_neg = findfirst(yhat .!= 1)
-println(first_neg)
+    ## Evaluation:
+    yhat_train = ScikitLearn.predict(classifier, MLJ.matrix(X[train,:]))
+    yhat_test = ScikitLearn.predict(classifier, MLJ.matrix(X[test,:]))
 
-orig_instance = X[first_neg,:]
-partial_classifier = initMLPEval(classifier,orig_instance)
+    println("Accuracy train data: $(mean(yhat_train .== y[train]))")
+    println("Accuracy test data: $(mean(yhat_test .== y[test]))")
 
-include("yelp_constraints.jl")
+    serialize(path*"/mlp_classifier_$(layer_sizes).bin",  classifier)
+end
+
+# yhat = ScikitLearn.predict(classifier, MLJ.matrix(X))
+# first_neg = findfirst(yhat .!= 1)
+# println(first_neg)
+# orig_instance = X[first_neg,:]
+# partial_classifier = initMLPEval(classifier,orig_instance)
+
+include("yelp_constraints.jl");

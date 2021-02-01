@@ -2,6 +2,9 @@ using Statistics, DataFrames, MLJ, ScikitLearn, Serialization
 import Dates
 
 const loadData = false
+const learnModel = false
+const layers = (100,100)
+
 const path = "data/allstate"
 
 if loadData
@@ -17,33 +20,41 @@ end
 # load the model
 @sk_import neural_network: MLPClassifier
 
-# split the dataset
-train, test = partition(eachindex(y), 0.7, shuffle=true)
+if learnModel
+    println("Learning MLP model")
 
-for layer_sizes in [(10,10), (100,), (100,10), (100,100), (200,), (200,10), (200,100)]
+    # split the dataset
+    train, test = partition(eachindex(y), 0.7, shuffle=true)
 
-    println("Allstate: Layer Sizes: $(layer_sizes) -- ($(Dates.now()))")
+    for layer_sizes in [(10,10), (100,), (100,10), (100,100), (200,), (200,10), (200,100)]
 
-    #mlj_classifier=MLPClassifier(hidden_layer_sizes=(200,100,100,))
-    classifier=MLPClassifier(hidden_layer_sizes=layer_sizes)
+        println("Allstate: Layer Sizes: $(layer_sizes) -- ($(Dates.now()))")
 
-    # Training
-    ScikitLearn.fit!(classifier, MLJ.matrix(X), vec(collect(Int, y)))
+        #mlj_classifier=MLPClassifier(hidden_layer_sizes=(200,100,100,))
+        classifier=MLPClassifier(hidden_layer_sizes=layer_sizes)
 
-    ## Evaluation:
-    yhat_train = ScikitLearn.predict(classifier, MLJ.matrix(X[train,:]))
-    yhat_test = ScikitLearn.predict(classifier, MLJ.matrix(X[test,:]))
+        # Training
+        ScikitLearn.fit!(classifier, MLJ.matrix(X), vec(collect(Int, y)))
 
-    println("Accuracy train data: $(mean(yhat_train .== y[train])) -- ($(Dates.now()))")
-    println("Accuracy test data: $(mean(yhat_test .== y[test]))\n")
+        ## Evaluation:
+        yhat_train = ScikitLearn.predict(classifier, MLJ.matrix(X[train,:]))
+        yhat_test = ScikitLearn.predict(classifier, MLJ.matrix(X[test,:]))
 
-    serialize(path*"/mlp_classifier_$(layer_sizes).bin",  classifier)
+        println("Accuracy train data: $(mean(yhat_train .== y[train])) -- ($(Dates.now()))")
+        println("Accuracy test data: $(mean(yhat_test .== y[test]))\n")
+
+        serialize(path*"/mlp_classifier_$(layer_sizes).bin",  classifier)
+    end
+
+    # yhat = ScikitLearn.predict(classifier, MLJ.matrix(X))
+    # first_neg = findfirst(yhat .!= 1)
+    # println(first_neg)
+    # orig_instance = X[first_neg,:]
+    # partial_classifier = initMLPEval(mlj_classifier,orig_instance)
+else
+    println("Loading MLP model")
+
+    classifier = deserialize(path*"/mlp_classifier_$(layers).bin")
 end
-
-# yhat = ScikitLearn.predict(classifier, MLJ.matrix(X))
-# first_neg = findfirst(yhat .!= 1)
-# println(first_neg)
-# orig_instance = X[first_neg,:]
-# partial_classifier = initMLPEval(mlj_classifier,orig_instance)
 
 include("allstate_constraints.jl")

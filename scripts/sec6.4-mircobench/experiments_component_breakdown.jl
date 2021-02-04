@@ -6,13 +6,15 @@ import Dates, JLD, PyCall
 function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, dataset_name::String, model::String, desired_class::Int64)
 
     if isfile("data/$dataset_name/domains.jld")
-
         println("Loading domains from file: data/$dataset_name/domains.jld ($(Dates.now()))")
         d = JLD.load("data/$dataset_name/domains.jld")
         domains = d["domains"]
     else
         println("Initializing Domains: ($(Dates.now()))")
         domains = initDomains(p, X)
+
+        println("Saving Domains: ($(Dates.now()))")
+        JLD.save("data/$dataset_name/domains.jld", "domains", domains)
     end
 
     println("Computing Predictions: ($(Dates.now()))")
@@ -47,7 +49,7 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
 
         (!mutation_run && !crossover_run) && continue
 
-        println("mutation_run: $mutation_run crossover_run $crossover_run compress_data: $compress ($(Dates.now()))")
+        println("partial: $partial mutation_run: $mutation_run crossover_run $crossover_run compress_data: $compress ($(Dates.now()))")
 
         num_explained = 0
         changed_feats = falses(size(X,2))

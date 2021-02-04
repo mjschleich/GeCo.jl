@@ -47,7 +47,7 @@ function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow,
     for (mod, entities) in manager.dict
         pred::Vector{Float64} = vec(predict(classifier, entities, mod))
 
-        dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
+        dist = distance(entities, orig_instance, feasible_space.num_features, feasible_space.ranges;
             distance_temp=distance_temp, norm_ratio=norm_ratio)
 
         entities.outc = pred .> 0.5

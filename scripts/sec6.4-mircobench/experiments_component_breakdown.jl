@@ -161,10 +161,10 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
             Average generated cfs:              $(mean(num_explored))
             Average representatino size:        $(mean(avg_rep_size))
             Correct outcomes:                   $(mean(correct_outcome))
-            prep_time:                          $(prep_time)
-            selection_time:                     $(selection_time)
-            mutation_time:                      $(mutation_time)
-            crossover_time                      $(crossover_time)
+            prep_time:                          $(mean(prep_time))  ($(minimum(prep_time)),$(maximum(prep_time)))
+            selection_time:                     $(mean(selection_time))  ($(minimum(selection_time)),$(maximum(selection_time)))
+            mutation_time:                      $(mean(mutation_time))  ($(minimum(mutation_time)),$(maximum(mutation_time)))
+            crossover_time                      $(mean(crossover_time))  ($(minimum(crossover_time)),$(maximum(crossover_time)))
             Saved to: $file")
     end
 end

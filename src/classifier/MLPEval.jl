@@ -60,7 +60,7 @@ initMLPEval(classifier, orig_instance) =
                 inplace_logistic(matrix)
             end
         end
-        df[:,:pred] .= view(matrix,1,:)
+        df[:,:pred] .= view(matrix,:,1) # note the order of : and 1
     end
     pred::Vector{Float64} = df[!, :pred]
     select!(df, Not(:pred))

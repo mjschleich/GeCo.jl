@@ -1,4 +1,4 @@
-using CSV, Statistics, DataFrames, MLJ, ScikitLearn
+using CSV, Statistics, DataFrames, MLJ, ScikitLearn, Serialization
 
 
 const loadData = true

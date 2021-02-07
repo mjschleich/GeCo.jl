@@ -1,4 +1,4 @@
-using CSV, Statistics, DataFrames, MLJ
+using CSV, Statistics, DataFrames, MLJ, Serialization
 
 const loadData = false
 const path = "data/yelp"

@@ -220,7 +220,7 @@ end
 
 
 function actions(counterfactuals::DataFrame, orig_instance; num_actions = 5)
-    for idx in 1:num_actions
+    for idx in 1:min(num_actions, nrow(counterfactuals))
         cf = counterfactuals[idx,:]
         println("\n------- COUNTERFACTUAL $idx\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)")
         for feature in propertynames(orig_instance)
@@ -239,7 +239,7 @@ function actions(counterfactuals::DataManager, orig_instance; num_actions = 5)
     df = materialize(counterfactuals)
     sort!(df, :score)
 
-    for idx in 1:num_actions
+    for idx in 1:min(num_actions, nrow(df))
         cf = df[idx,:]
         println("\n------- COUNTERFACTUAL $idx\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)")
         for feature in String.(names(orig_instance))

@@ -1,7 +1,7 @@
-using Pkg; Pkg.activate(".")
+# using Pkg; Pkg.activate(".")
 using GeCo, DataFrames, JLD, StatsBase
 
-include("../scripts/credit/credit_setup_MACE.jl");
+# include("../scripts/credit/credit_setup_MACE.jl");
 
 # Compute Feasible Space
 # Pick random Feature Group
@@ -61,10 +61,10 @@ function simBA(orig_instance, X, p, classifier, k, desired_class)
         delete!(population, (2:num_rows))
 
 
-        println(feature_names)
+        # println(feature_names)
         num_changes += 1
     end
-    return population, num_changes, population[1,:score]
+    return population[1,:]
 end
 
-res, num_changes, score = simBA(orig_instance, X, p, classifier, 10, 1)
+#res, num_changes, score = simBA(orig_instance, X, p, classifier, 10, 1)

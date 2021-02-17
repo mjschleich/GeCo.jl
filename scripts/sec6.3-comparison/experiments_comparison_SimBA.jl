@@ -68,6 +68,6 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
         Number of failed explanations:      $(num_failed_explained) ($(100*num_failed_explained/num_explained)%)
         Saved to: $file")
 
-    assert(num_failed_explained == sum(.!desired_outc))
+    @assert(num_failed_explained == sum(.!desired_outc))
 
 end

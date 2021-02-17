@@ -1,7 +1,4 @@
-# using Pkg; Pkg.activate(".")
 using GeCo, DataFrames, JLD, StatsBase
-
-# include("../scripts/credit/credit_setup_MACE.jl");
 
 # Compute Feasible Space
 # Pick random Feature Group
@@ -18,7 +15,7 @@ function simBA(orig_instance, X, p, classifier, k, desired_class)
             :score => zeros(Float64, 1),
             :outc => falses(1),
             :estcf => falses(1),
-            :mod => BitVector[falses(14) for _ = 1:1]
+            :mod => BitVector[falses(feasible_space.num_features)]
             )
 
     # we use the score function here to check whether return the good
@@ -26,8 +23,7 @@ function simBA(orig_instance, X, p, classifier, k, desired_class)
     population.score = GeCo.score(classifier, population, desired_class)
 
     index_set = Set(1:length(feasible_space.groups))
-    # println(population[1,:score])
-    # println(desired_class)
+
     num_changes = 0
     while (!isempty(index_set)) && ((desired_class == 1) ? (population[1,:score] < 0.5) : (population[1,:score] > 0.5))
 
@@ -60,11 +56,7 @@ function simBA(orig_instance, X, p, classifier, k, desired_class)
         sort!(population, :score; rev=true)
         delete!(population, (2:num_rows))
 
-
-        # println(feature_names)
         num_changes += 1
     end
-    return population[1,:]
+    return population[1,:], ((desired_class == 1) ? (population[1,:score] < 0.5) : (population[1,:score] > 0.5))
 end
-
-#res, num_changes, score = simBA(orig_instance, X, p, classifier, 10, 1)

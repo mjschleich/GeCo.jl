@@ -26,27 +26,27 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
             (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
             orig_instance = X[i, :]
-            time = @elapsed closest_entity =
-                    simBA(orig_instance, X, p, classifier, 10, desired_class)
+            time = @elapsed closest_entity, correct_outcome =
+                simBA(orig_instance, X, p, classifier, 10, desired_class)
 
+            changed = BitVector([orig_instance[feature] != closest_entity[feature] for feature in  propertynames(orig_instance)])
 
-            changed = []
-            for feature in propertynames(orig_instance)
-                push!(changed, orig_instance[feature] != closest_entity[feature])
-            end
             distance_min = distance(closest_entity, orig_instance, num_features, feasible_space.ranges)
+
             push!(num_changed, count(changed))
             push!(feat_changed, changed)
             push!(distances, distance_min)
             push!(times, time)
-            
+
+            num_failed_explained += !correct_outcome
 
             num_explained += 1
             (num_explained >= num_to_explain) && break
         end
     end
 
-    file = "scripts/results/simba_exp/$(dataset_name)_wit_mace_experiment_local.jld"
+    file = "scripts/results/simba_exp/$(dataset_name)_simba_experiment.jld"
+
     JLD.save(file, "times", times, "dist", distances, "numfeat", num_changed, "feat_changed", feat_changed, "num_failed", num_failed_explained)
 
     println("

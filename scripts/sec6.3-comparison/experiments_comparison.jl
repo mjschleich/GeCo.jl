@@ -8,6 +8,7 @@ import Dates, JLD
 include("experiments_comparison_MACE.jl")
 include("experiments_comparison_WIT.jl")
 include("experiments_comparison_CERT.jl")
+include("experiments_comparison_SimBA.jl")
 
 for dataset in ["adult", "credit"]
     include("../$dataset/$(dataset)_setup_MACE.jl")
@@ -23,4 +24,8 @@ for dataset in ["adult", "credit"]
     Xcopy = DataFrame(X)
 
     runExperimentWIT(Xcopy, p, 1, true, dataset)
+
+    Xcopy = DataFrame(X)
+
+    runExperimentSimba(Xcopy, p, 1, dataset)
 end

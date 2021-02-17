@@ -1,11 +1,13 @@
 
+include("../../competitors/SimBA.jl")
+
 function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, dataset_name::String)
     feasible_space = feasibleSpace(X, orig_instance, p)
 
+    desired_outc = Array{Bool,1}()
     num_changed = Array{Int64,1}()
     feat_changed = Array{BitArray{1},1}()
     distances = Array{Float64,1}()
-    correct_outcome = Array{Bool,1}()
     times = Array{Float64,1}()
 
     ranges = Dict(feature => Float64(maximum(col)-minimum(col)) for (feature, col) in pairs(eachcol(X)))
@@ -23,7 +25,7 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
 
     for i in 1:size(X,1)
         if predictions[i] != desired_class
-            (i % 100 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
+            (i % 1000 == 0) && println("$(@sprintf("%.2f", 100*num_explained/num_to_explain))% through .. ")
 
             orig_instance = X[i, :]
             time = @elapsed closest_entity, correct_outcome =
@@ -37,6 +39,7 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
             push!(feat_changed, changed)
             push!(distances, distance_min)
             push!(times, time)
+            push!(desired_outc, correct_outcome)
 
             num_failed_explained += !correct_outcome
 
@@ -45,9 +48,16 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
         end
     end
 
+
     file = "scripts/results/simba_exp/$(dataset_name)_simba_experiment.jld"
 
-    JLD.save(file, "times", times, "dist", distances, "numfeat", num_changed, "feat_changed", feat_changed, "num_failed", num_failed_explained)
+    JLD.save(file,
+        "times", times,
+        "dist", distances,
+        "numfeat", num_changed,
+        "feat_changed", feat_changed,
+        "desire_outc", desire_outc,
+        "num_failed", num_failed_explained )
 
     println("
         Average number of features changed: $(mean(num_changed))
@@ -55,4 +65,7 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
         Average times:                      $(mean(times))
         Number of failed explanations:      $(num_failed_explained) ($(100*num_failed_explained/num_explained)%)
         Saved to: $file")
+
+    assert(num_failed_explained == sum(desired_outc))
+
 end

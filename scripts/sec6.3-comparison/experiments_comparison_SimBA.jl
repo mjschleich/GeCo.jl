@@ -1,4 +1,6 @@
 
+using Printf
+
 include("../../competitors/SimBA.jl")
 
 function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, dataset_name::String)
@@ -29,7 +31,7 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
 
             orig_instance = X[i, :]
             time = @elapsed closest_entity, correct_outcome =
-                simBA(orig_instance, X, p, classifier, 10, desired_class)
+                simBA(orig_instance, X, p, classifier, 5, desired_class)
 
             changed = BitVector([orig_instance[feature] != closest_entity[feature] for feature in  propertynames(orig_instance)])
 
@@ -56,7 +58,7 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
         "dist", distances,
         "numfeat", num_changed,
         "feat_changed", feat_changed,
-        "desire_outc", desire_outc,
+        "desired_outc", desired_outc,
         "num_failed", num_failed_explained )
 
     println("
@@ -66,6 +68,6 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
         Number of failed explanations:      $(num_failed_explained) ($(100*num_failed_explained/num_explained)%)
         Saved to: $file")
 
-    assert(num_failed_explained == sum(desired_outc))
+    assert(num_failed_explained == sum(.!desired_outc))
 
 end

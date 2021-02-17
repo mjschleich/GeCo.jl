@@ -25,7 +25,7 @@ function simBA(orig_instance, X, p, classifier, k, desired_class)
     index_set = Set(1:length(feasible_space.groups))
 
     num_changes = 0
-    while (!isempty(index_set)) && ((desired_class == 1) ? (population[1,:score] < 0.5) : (population[1,:score] > 0.5))
+    while (!isempty(index_set)) && ((desired_class == 1)  && (population.score[1] < 0.5) || (desired_class == 0) && (population.score[1] > 0.5))
 
         # get the index of the feature group to change
         index = rand(index_set)
@@ -58,5 +58,6 @@ function simBA(orig_instance, X, p, classifier, k, desired_class)
 
         num_changes += 1
     end
-    return population[1,:], ((desired_class == 1) ? (population[1,:score] < 0.5) : (population[1,:score] > 0.5))
+
+    return population[1,:], ((desired_class == 1) ? (population[1,:score] > 0.5) : (population[1,:score] < 0.5))
 end

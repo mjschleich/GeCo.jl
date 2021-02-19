@@ -124,4 +124,26 @@ end
     matrix
 end
 
+# https://github.com/scikit-learn/scikit-learn/blob/95119c13a/sklearn/neural_network/_multilayer_perceptron.py#L701
+function predict(coefs::Vector{Matrix{Float64}}, intercepts::Vector{Vector{Float64}}, activation::String, df::Matrix{Float64})
+    g = ACTIVATIONS[activation]
+    num_layer = length(coefs)
+    matrix = df
+    if num_layer != 1
+        g(matrix)
+    else
+        inplace_logistic(matrix)
+    end
+    for i = 1:num_layer
+        matrix *= coefs[i]
+        for j = 1:size(matrix,1); matrix[j,:] += intercepts[i]; end
+        if i != num_layer
+            g(matrix)
+        else
+            inplace_logistic(matrix)
+        end
+    end
+    matrix
+end
+
 end

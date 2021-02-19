@@ -5,9 +5,13 @@ function score(classifier::MLJ.Machine, counterfactuals::DataFrame, desired_clas
 end
 
 function score(classifier::PyCall.PyObject, counterfactuals::DataFrame, desired_class)
-    if contains(classifier.__module__, "sklearn")
-        return ScikitLearn.predict_proba(classifier, MLJ.matrix(counterfactuals[!, 1:end-NUM_EXTRA_COL]))[:, desired_class+1]
-    elseif contains(classifier.__module__, "torch")
+    if occursin("sklearn", classifier.__module__) # uses `occursin` instead of `contains` because `contains` is only defined for julia 1.5 and above
+        if startswith(classifier.__str__(), "MLPClassifier")
+            return MLPEvaluation.predict(classifier.coefs_, classifier.intercepts_, classifier.activation, MLJ.matrix(counterfactuals[!, 1:end-NUM_EXTRA_COL]))
+        else
+            return ScikitLearn.predict_proba(classifier, MLJ.matrix(counterfactuals[!, 1:end-NUM_EXTRA_COL]))[:, desired_class+1]
+        end
+    elseif contains("torch", classifier.__module__)
         torch = pyimport("torch")
         in = torch.tensor(convert(Matrix, counterfactuals[!, 1:end-NUM_EXTRA_COL])).float()
         preds = classifier(in).float()

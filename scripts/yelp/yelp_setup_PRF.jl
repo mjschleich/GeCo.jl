@@ -1,6 +1,7 @@
 using CSV, Statistics, DataFrames, MLJ, Serialization
 
 const loadData = false
+const learnModel = false
 const path = "data/yelp"
 
 if loadData
@@ -13,23 +14,34 @@ else
     y = deserialize(path*"/train_data_y.bin")
 end
 
-# load the model
-tree_model = @load RandomForestClassifier pkg=DecisionTree
-tree_model.max_depth = 10
+if learnModel
+    println("Learning Partial RF model")
 
-# split the dataset
-train, test = partition(eachindex(y), 0.7, shuffle=true)
-classifier = machine(tree_model, X, y)
+    # load the model
+    tree_model = @load RandomForestClassifier pkg=DecisionTree
+    tree_model.max_depth = 10
 
-# train
-MLJ.fit!(classifier, rows=train)
+    # split the dataset
+    train, test = partition(eachindex(y), 0.7, shuffle=true)
+    classifier = machine(tree_model, X, y)
 
-## Evaluation:
-yhat_train = MLJ.predict(classifier, X[train,:])
-yhat_test = MLJ.predict(classifier, X[test,:])
+    # train
+    MLJ.fit!(classifier, rows=train)
 
-println("Accuracy train data: $(accuracy(mode.(yhat_train), y[train]))")
-println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
+    ## Evaluation:
+    yhat_train = MLJ.predict(classifier, X[train,:])
+    yhat_test = MLJ.predict(classifier, X[test,:])
+
+    println("Accuracy train data: $(accuracy(mode.(yhat_train), y[train]))")
+    println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
+
+    serialize(path*"/prf_classifier.bin",  classifier)
+
+else
+
+    println("Loading Partial RF model")
+    classifier = deserialize(path*"/prf_classifier.bin")
+end
 
 orig_instance = X[536, :]
 

@@ -19,6 +19,11 @@ end
 PLAFProgram() = PLAFProgram(Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
 initPLAF() = PLAFProgram(Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
 
+PLAFProgram(p::PLAFProgram) = PLAFProgram(
+    Vector{Tuple}(p.groups),
+    Vector{Constraint}(p.constraints),
+    Vector{Implication}(p.implications))
+
 Base.empty!(p::PLAFProgram) = begin
     empty!(p.groups)
     empty!(p.constraints)
@@ -153,6 +158,28 @@ function ground(kw)
                 GeCo.make_source_concrete($(cond_source)),
                 GeCo.make_source_concrete($(conseq_source)) )
         end
+
+    # elseif kw.head == :generator
+
+    #     println("Generator: ", kw.args[1], " --- ", kw.args[2])
+    #     println(kw.head, kw.args)
+    #     println(kw.args[1].head, kw.args[1].args)
+    #     println(kw.args[2].head, kw.args[2].args)
+
+    #     membernames = Dict{Any, Symbol}()
+    #     # gen_body::Expr = replace_syms!(kw.args[2], membernames)
+    #     # gen_source::Expr = Expr(:vect, keys(membernames)...)
+
+    #     gen_body = quote all($(kw)) end
+    #     gen_source::Expr = Expr(:vect, keys(membernames)...)
+
+    #     println("Gen body: ", gen_body)
+
+    #     generated_func = quote
+    #         $Constraint(
+    #             GeCo.make_source_concrete($(gen_source)), __orig_instance -> $gen_body)
+    #     end
+
     else
         membernames = Dict{Any, Symbol}()
 

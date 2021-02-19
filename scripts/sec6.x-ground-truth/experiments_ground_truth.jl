@@ -86,11 +86,11 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds; norm_ratio
 
         changed_needed = 0
         optimal_cf = deepcopy(orig_instance)
-        for sym in symbols
+        for (sym, thresh) in zip(symbols, thresholds)
             # if direction[j] == 1
-            if orig_instance[sym] <= thresholds[sym]
+            if orig_instance[sym] <= thresh
                 changed_needed += 1
-                optimal_cf[sym] = thresholds[sym]
+                optimal_cf[sym] = thresh
             end
             # else
             #     if orig_instance[sym] >= thresholds[sym]
@@ -100,7 +100,6 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds; norm_ratio
             # end
 
             # println("Symbol: $sym optimal: $(thresholds[j]) exp: $(explanation[1,sym]) orig: $(orig_instance[sym])")
-
         end
 
         # println("Symbol: $symbols\n exp: $(explanation[1,symbols])\n orig: $(orig_instance[symbols])\n")

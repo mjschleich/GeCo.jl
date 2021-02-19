@@ -86,7 +86,7 @@ function matrixwithtype(::Type{T}, table; transpose::Bool=false) where {T}
 end
 
 
-@inline function predict(clf::PartialMLPEval, df::DataFrame, mod::BitVector)
+@inline function predict(clf::PartialMLPEval, df::DataFrame, mod::BitVector)::Vector{Float64}
     g = ACTIVATIONS[clf.activation]
     matrix::Array{Float64,2} = repeat(if haskey(clf.partial_cache, mod)
         clf.partial_cache[mod]
@@ -121,11 +121,11 @@ end
         end
         # println(matrix)
     end
-    matrix
+    vec(matrix)
 end
 
 # https://github.com/scikit-learn/scikit-learn/blob/95119c13a/sklearn/neural_network/_multilayer_perceptron.py#L701
-function predict(coefs::Vector{Matrix{Float64}}, intercepts::Vector{Vector{Float64}}, activation::String, df::Matrix{Float64})
+function predict(coefs::Vector{Matrix{Float64}}, intercepts::Vector{Vector{Float64}}, activation::String, df::Matrix{Float64})::Vector{Float64}
     g = ACTIVATIONS[activation]
     num_layer = length(coefs)
     matrix = df
@@ -143,7 +143,7 @@ function predict(coefs::Vector{Matrix{Float64}}, intercepts::Vector{Vector{Float
             inplace_logistic(matrix)
         end
     end
-    matrix
+    vec(matrix)
 end
 
 end

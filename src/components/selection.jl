@@ -1,23 +1,25 @@
 
-
 ## Selection operator which finds the top-k CF entities
 function selection!(population::DataFrame, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
     distance_temp::Vector{Float64}=Vector{Float64}())
 
-    preds = score(classifier, population, desired_class)
+    preds::Vector{Float64} = score(classifier, population, desired_class)
 
     dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
         distance_temp=distance_temp, norm_ratio=norm_ratio)
 
+    # population.outc = pred .> 0.5
+    # population.score = dist + map(predp -> !predp[2] ? 2.0 - predp[1] : 0.0, zip(preds, population.outc))
+
     for i in 1:nrow(population)
-        p = (preds[i] > 0.5)
-        population[i, :score] = dist[i] + (!p ? 2.0 - preds[i] : 0.0)
-        population[i, :outc] = p
+        p = (preds[i] < 0.5)
+        population.score[i] = dist[i] + p * (2.0 - preds[i])
+        population.outc[i] = !p
     end
 
-    # TODO:  Can we optimize this?
+    # TODO: Can we optimize this?
     sort!(population, [:score])
 
     # We keep the top-k counterfactuals
@@ -45,7 +47,7 @@ function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow,
     max_num_entity = maximum(nrow(entities) for entities in values(manager.dict))
 
     for (mod, entities) in manager.dict
-        pred::Vector{Float64} = vec(predict(classifier, entities, mod))
+        pred::Vector{Float64} = predict(classifier, entities, mod)
 
         dist = distance(entities, orig_instance, feasible_space.num_features, feasible_space.ranges;
             distance_temp=distance_temp, norm_ratio=norm_ratio)

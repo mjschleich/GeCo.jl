@@ -4,7 +4,7 @@ function score(classifier::MLJ.Machine, counterfactuals::DataFrame, desired_clas
     return broadcast(MLJ.pdf, MLJ.predict(classifier, counterfactuals[!, 1:end-NUM_EXTRA_COL]), desired_class)
 end
 
-function score(classifier::PyCall.PyObject, counterfactuals::DataFrame, desired_class)
+function score(classifier::PyCall.PyObject, counterfactuals::DataFrame, desired_class)::Vector{Float64}
     if contains(classifier.__module__, "sklearn")
         return ScikitLearn.predict_proba(classifier, MLJ.matrix(counterfactuals[!, 1:end-NUM_EXTRA_COL]))[:, desired_class+1]
     elseif contains(classifier.__module__, "torch")

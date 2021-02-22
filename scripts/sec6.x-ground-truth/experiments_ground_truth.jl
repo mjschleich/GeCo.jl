@@ -45,7 +45,7 @@ function generateClassifierFunction(features, thresholds)
 end
 
 
-function groundTruthExperiment(X, p, classifier, symbols, thresholds; norm_ratio=[0.5, 0.5, 0, 0])
+function groundTruthExperiment(X, p, classifier, symbols, thresholds; norm_ratio=[0.5, 0.5, 0, 0], min_num_generations = 3)
 
     ranges = Dict(feature => Float64(maximum(col) - minimum(col)) for (feature, col) in pairs(eachcol(X)))
     num_features = ncol(X)
@@ -67,15 +67,15 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds; norm_ratio
             break
         end
 
+        # we want to want the instances that fails all thresh
         if predictions[i] == 1 || any(X[i,sym] >= thresh for (sym, thresh) in zip(symbols, thresholds))
             continue
         end
 
         orig_instance = X[i, :]
-
         # run geco on that
         (explanation, count, generation, rep_size) = explain(orig_instance, X, p, classifier;
-            norm_ratio=norm_ratio)
+            norm_ratio=norm_ratio, min_num_generations = min_num_generations)
 
         changed = 0
         for i in 1:num_features
@@ -88,7 +88,7 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds; norm_ratio
         optimal_cf = deepcopy(orig_instance)
         for (sym, thresh) in zip(symbols, thresholds)
             # if direction[j] == 1
-            if orig_instance[sym] <= thresh
+            if orig_instance[sym] < thresh
                 changed_needed += 1
                 optimal_cf[sym] = thresh
             end
@@ -134,14 +134,35 @@ include("../credit/credit_setup_MACE.jl");
 
 classifier_ordinal =  @ClassifierGenerator([:AgeGroup], [3])
 classifier_numerical = @ClassifierGenerator([:MaxBillAmountOverLast6Months], [1500])
-classifier_combined = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue], [1500, 3, 1500, 5])
+classifier_length2 = @ClassifierGenerator([:AgeGroup, :MaxBillAmountOverLast6Months], [3, 1500])
+classifier_length3 = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount], [1500, 3, 1500])
+classifier_length4 = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue], [1500, 3, 1500, 5])
+classifier_length5 = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue], [1500, 1500, 3, 1500, 5])
+classifier_length6 = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MostRecentPaymentAmount], [1500, 1500, 3, 1500, 5, 1000])
+
 
 groundTruthExperiment(X, p, classifier_ordinal, [:AgeGroup], [3])
 groundTruthExperiment(X, p, classifier_numerical, [:MaxBillAmountOverLast6Months], [3000])
-groundTruthExperiment(X, p, classifier_combined,
-    [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue],
-    [1500, 3, 1500, 5];
+groundTruthExperiment(X, p, classifier_length2,
+    [:MaxBillAmountOverLast6Months, :AgeGroup],
+    [1500, 3];
     norm_ratio=[0.2,0.8,0,0])
+groundTruthExperiment(X, p, classifier_length3,
+    [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount],
+    [1500, 3, 1500];
+    norm_ratio=[0.2,0.8,0,0])
+groundTruthExperiment(X, p, classifier_length4,
+    [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue], [1500, 3, 1500, 5];
+    norm_ratio=[0,1.0,0,0])
+groundTruthExperiment(X, p, classifier_length5,
+    [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue], 
+    [1500, 1500, 3, 1500, 5];
+    norm_ratio=[0.2,0.8,0,0])
+groundTruthExperiment(X, p, classifier_length6,
+    [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MostRecentPaymentAmount], 
+    [1500, 1500, 3, 1500, 5, 1000];
+    norm_ratio=[0,1.0,0,0],
+    min_num_generations = 10)
 
 
 

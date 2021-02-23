@@ -1,11 +1,7 @@
-# Things to consider:
-# -- Different number of changed features --> continuous, categorical, different domain sizes
-# -- What is the distance? How does it compare to the minimum distance?
-# -- # of features changed, and is this equal to the expect number of changes
-# -- number of generations required to find this explanation
-# -- maybe: experiments with monotonicty  (for later)
+
 using Pkg; Pkg.activate(".")
 using GeCo, DataFrames, JLD
+
 macro ClassifierGenerator(features, thresholds)
     return generateClassifierFunction(features, thresholds)
 end
@@ -209,8 +205,6 @@ samples2 = (samples_mut = 10, samples_init = 40)
 samples3 = (samples_mut = 100, samples_init = 300)
 
 for norm_ratio = [l1_norm], num_samples=[samples1, samples2, samples3], syms in [syms1,syms2,syms3,syms4,syms5,syms6,syms7] # [syms1, syms2, syms3, syms4] [l1_norm, l0_l1_norm]
-
-    # Comp thresholds:
     threshs = [thresholds[s] for s in syms]
     this_classifier = @ClassifierGenerator(syms, threshs)
 
@@ -220,6 +214,13 @@ for norm_ratio = [l1_norm], num_samples=[samples1, samples2, samples3], syms in 
         max_samples_mut=num_samples.samples_mut
         )
 end
+
+# Things to consider:
+# -- Different number of changed features --> continuous, categorical, different domain sizes
+# -- What is the distance? How does it compare to the minimum distance?
+# -- # of features changed, and is this equal to the expect number of changes
+# -- number of generations required to find this explanation
+# -- maybe: experiments with monotonicty  (for later)
 
 # classifier_ordinal =  @ClassifierGenerator([:AgeGroup], [thresholds[:AgeGroup]])
 # classifier_numerical = @ClassifierGenerator([:MaxBillAmountOverLast6Months], [thresholds[:MaxBillAmountOverLast6Months]])

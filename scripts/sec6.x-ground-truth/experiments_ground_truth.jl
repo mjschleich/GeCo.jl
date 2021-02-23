@@ -85,17 +85,17 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
     predictions = classifier(X)
 
     for i in 1:nrow(X)
-        if (explained >= 1000)
+        if explained >= 1000
             break
         end
 
-        # we want to want the instances that fails all thresh
+        # We consider only instances that fail all conditions
         if predictions[i] == 1 || any(X[i,sym] >= thresh for (sym, thresh) in zip(symbols, thresholds))
             continue
         end
 
         orig_instance = X[i, :]
-        # run geco on that
+
         time = @elapsed (explanation, count, generation, rep_size) = explain(orig_instance, X, p, classifier;
             norm_ratio=norm_ratio, min_num_generations = min_num_generations, max_num_samples=max_samples_mut, max_samples_init=max_samples_init)
 
@@ -109,19 +109,10 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         changed_needed = 0
         optimal_cf = deepcopy(orig_instance)
         for (sym, thresh) in zip(symbols, thresholds)
-            # if direction[j] == 1
             if orig_instance[sym] < thresh
                 changed_needed += 1
                 optimal_cf[sym] = thresh
             end
-            # else
-            #     if orig_instance[sym] >= thresholds[sym]
-            #         changed_needed += 1
-            #         optimal_cf[sym] = thresholds[sym]
-            #     end
-            # end
-
-            # println("Symbol: $sym optimal: $(thresholds[j]) exp: $(explanation[1,sym]) orig: $(orig_instance[sym])")
         end
         if explanation[1,1:length(optimal_cf)] == optimal_cf
             num_recovered += 1
@@ -195,7 +186,7 @@ syms3 = (:MaxBillAmountOverLast6Months, :AgeGroup)
 syms4 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount)
 syms5 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue)
 syms6 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MaxPaymentAmountOverLast6Months)
-sysm7 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MaxPaymentAmountOverLast6Months, :MostRecentPaymentAmount)
+syms7 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MaxPaymentAmountOverLast6Months, :MostRecentPaymentAmount)
 
 l1_norm = [0.0, 1.0, 0.0, 0.0 ]
 l0_l1_norm = [0.5, 0.5, 0.0, 0.0 ]

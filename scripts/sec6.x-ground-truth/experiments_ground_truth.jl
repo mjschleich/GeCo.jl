@@ -89,7 +89,7 @@ function groundTruthExperiment(X, p, classifier, symbols;
 
 
     for i in 1:nrow(X)
-        if (explained >= 10)
+        if (explained >= 1000)
             break
         end
 
@@ -127,9 +127,9 @@ function groundTruthExperiment(X, p, classifier, symbols;
 
             # println("Symbol: $sym optimal: $(thresholds[j]) exp: $(explanation[1,sym]) orig: $(orig_instance[sym])")
         end
-        # if explanation[1,1:length(optimal_cf)] == optimal_cf
-        #     num_recovered += 1
-        # end
+        if explanation[1,1:length(optimal_cf)] == optimal_cf
+            num_recovered += 1
+        end
 
         # println("Symbol: $symbols\n exp: $(explanation[1,symbols])\n orig: $(orig_instance[symbols])\n")
         # println("Correct Outcome: $(explanation[1, :outc]) \n\n")

@@ -28,7 +28,7 @@ function generateClassifierFunction(features, thresholds)
                     end
                 end
                 if failed_conditions > 0
-                    score[i] = max(0,0.5 - (0.5*distance_sum + 0.5*failed_conditions) / length($features))
+                    score[i] = max(0, 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions) / length($features))
                 else
                     score[i] = 1
                 end
@@ -47,8 +47,8 @@ function thresholdGenerator(X, symbols)
     for symbol in symbols
         thresh = 0
         freq = 0
-        space = combine(groupby(X, symbol; sort = true), nrow => :count)
-        for row_index in Int(floor(0.3*nrow(space))) : Int(ceil(0.7*nrow(space)))
+        space = combine(groupby(X, symbol; sort=true), nrow => :count)
+        for row_index in Int(floor(0.3 * nrow(space))):Int(ceil(0.7 * nrow(space)))
             if (freq < space[row_index, :count])
                 freq = space[row_index, :count]
                 thresh = space[row_index, symbol]
@@ -64,7 +64,7 @@ end
 
 function groundTruthExperiment(X, p, classifier, symbols, thresholds;
     norm_ratio=[0.5, 0.5, 0, 0],
-    min_num_generations = 3,
+    min_num_generations=3,
     max_samples_mut::Int64=5,
     max_samples_init::Int64=20)
 
@@ -97,7 +97,12 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         orig_instance = X[i, :]
 
         time = @elapsed (explanation, count, generation, rep_size) = explain(orig_instance, X, p, classifier;
-            norm_ratio=norm_ratio, min_num_generations = min_num_generations, max_num_samples=max_samples_mut, max_samples_init=max_samples_init)
+            norm_ratio=norm_ratio,
+            min_num_generations=1,
+            max_num_generations=20,
+            max_num_samples=max_samples_mut,
+            max_samples_init=max_samples_init,
+            size_distance_temp=10000000)
 
         changed = 0
         for i in 1:num_features
@@ -139,18 +144,18 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
 
     ratio =
         if norm_ratio == [0.0,1.0,0.0,0.0]
-            "l1_norm"
-        elseif norm_ratio == [0.5,0.5,0.0,0.0]
-            "l0_l1_norm"
-        else
-            norm_ratio
-        end
+        "l1_norm"
+    elseif norm_ratio == [0.5,0.5,0.0,0.0]
+        "l0_l1_norm"
+    else
+        norm_ratio
+    end
 
     exp_name = if length(symbols) == 1
-            symbols[1]
-        else
-            string(length(symbols))*"features"
-        end
+        symbols[1]
+    else
+        string(length(symbols)) * "features"
+    end
 
     file = "scripts/results/ground_truth_exp/credit_ground_truth_experiment_symbols_$(exp_name)_ratio_$(ratio)_samples_$(max_samples_init)_$(max_samples_mut).jld"
     JLD.save(file,
@@ -178,10 +183,10 @@ end
 include("../credit/credit_setup_MACE.jl");
 
 # thresholds = thresholdGenerator(X, [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MostRecentPaymentAmount])
-thresholds = Dict(:MostRecentBillAmount => 4020.0,:MaxBillAmountOverLast6Months => 4320.0,:AgeGroup => 2.0,:TotalMonthsOverdue => 12.0,:MaxPaymentAmountOverLast6Months => 3050.0,:MostRecentPaymentAmount => 1220.0)
+thresholds = Dict(:MostRecentBillAmount => 4020.0, :MaxBillAmountOverLast6Months => 4320.0, :AgeGroup => 2.0, :TotalMonthsOverdue => 12.0, :MaxPaymentAmountOverLast6Months => 3050.0, :MostRecentPaymentAmount => 1220.0)
 
-syms1 = (:AgeGroup, )
-syms2 = (:MaxBillAmountOverLast6Months, )
+syms1 = (:AgeGroup,)
+syms2 = (:MaxBillAmountOverLast6Months,)
 syms3 = (:MaxBillAmountOverLast6Months, :AgeGroup)
 syms4 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount)
 syms5 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue)
@@ -195,7 +200,7 @@ samples1 = (samples_mut = 5, samples_init = 20)
 samples2 = (samples_mut = 10, samples_init = 40)
 samples3 = (samples_mut = 100, samples_init = 300)
 
-for norm_ratio = [l1_norm], num_samples=[samples1, samples2, samples3], syms in [syms1,syms2,syms3,syms4,syms5,syms6,syms7] # [syms1, syms2, syms3, syms4] [l1_norm, l0_l1_norm]
+for norm_ratio in [l1_norm], num_samples in [samples1, samples2, samples3], syms in [syms1,syms2,syms3,syms4,syms5,syms6,syms7] # [syms1, syms2, syms3, syms4] [l1_norm, l0_l1_norm]
     threshs = [thresholds[s] for s in syms]
     this_classifier = @ClassifierGenerator(syms, threshs)
 

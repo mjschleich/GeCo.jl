@@ -35,7 +35,7 @@ export initRandomForestEval, initPartialRandomForestEval, predict
 # Implements partial evaluation for multi-layered perceptrons
 include("classifier/MLPEval.jl")
 using .MLPEvaluation
-export initMLPEval, predict
+export MLPEvaluation, initMLPEval, predict
 
 # Implementation of various score function, which overloads prediction functions for different ML packages
 include("components/score.jl")
@@ -76,10 +76,11 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
     ablation::Bool=false,
     run_crossover::Bool=true,
     run_mutation::Bool=true,
+    size_distance_temp::Int64=nrow(data)*4,
     verbose::Bool=false
     )
 
-    distance_temp = Array{Float64, 1}(undef, 100000)
+    distance_temp = Array{Float64, 1}(undef, size_distance_temp)
     representation_size = zeros(Int64, max_num_generations+1)
 
     generation::Int64 = 0
@@ -138,7 +139,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
-        while generation < min_num_generations || !converged && generation < max_num_generations
+        while generation < min_num_generations || !converged && !population.outc[1] && generation < max_num_generations
 
             crossover!(population, orig_instance, feasible_space)
 

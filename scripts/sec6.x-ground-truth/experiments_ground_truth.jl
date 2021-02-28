@@ -66,7 +66,8 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
     norm_ratio=[0.5, 0.5, 0, 0],
     min_num_generations=3,
     max_samples_mut::Int64=5,
-    max_samples_init::Int64=20)
+    max_samples_init::Int64=20,
+    suffix::String="")
 
     ranges = Dict(feature => Float64(maximum(col) - minimum(col)) for (feature, col) in pairs(eachcol(X)))
     num_features = ncol(X)
@@ -79,12 +80,15 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
     num_changed_used = Array{Int64,1}()
     distances_to_optimal = Array{Float64,1}()
     distances_to_original = Array{Float64,1}()
+    distances_optimal_to_orig = Array{Float64,1}()
     num_generation = Array{Int64,1}()
     times = Array{Float64,1}()
 
     predictions = classifier(X)
 
+
     for i in 1:nrow(X)
+
         if explained >= 1000
             break
         end
@@ -102,6 +106,7 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
             max_num_generations=20,
             max_num_samples=max_samples_mut,
             max_samples_init=max_samples_init,
+            convergence_k=1,
             size_distance_temp=10000000)
 
         changed = 0
@@ -115,10 +120,11 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         optimal_cf = deepcopy(orig_instance)
         for (sym, thresh) in zip(symbols, thresholds)
             if orig_instance[sym] < thresh
-                changed_needed += 1
                 optimal_cf[sym] = thresh
+                changed_needed += 1
             end
         end
+
         if explanation[1,1:length(optimal_cf)] == optimal_cf
             num_recovered += 1
         end
@@ -132,10 +138,14 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         dist_to_optimal = distance(explanation[1, :], optimal_cf, num_features, ranges;
             norm_ratio=[0,1.0,0,0])
 
+        dist_optimal_to_orig = distance(optimal_cf, orig_instance, num_features, ranges;
+            norm_ratio=[0,1.0,0,0])
+
         explained += 1
         push!(correct_outcomes, explanation[1, :outc])
         push!(distances_to_original, dist_to_original)
         push!(distances_to_optimal, dist_to_optimal)
+        push!(distances_optimal_to_orig, dist_optimal_to_orig)
         push!(num_generation, generation)
         push!(num_changed_used, changed)
         push!(num_changed_needed, changed_needed)
@@ -151,16 +161,13 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         norm_ratio
     end
 
-    exp_name = if length(symbols) == 1
-        symbols[1]
-    else
-        string(length(symbols)) * "features"
-    end
+    exp_name = string(length(symbols)) * "features"
+    file = "scripts/results/ground_truth_exp/credit_ground_truth_exp_symbols_$(exp_name)_ratio_$(ratio)_samples_$(max_samples_init)_$(max_samples_mut)_$suffix.jld"
 
-    file = "scripts/results/ground_truth_exp/credit_ground_truth_experiment_symbols_$(exp_name)_ratio_$(ratio)_samples_$(max_samples_init)_$(max_samples_mut).jld"
     JLD.save(file,
         "distances_to_original", distances_to_original,
         "distances_to_optimal", distances_to_optimal,
+        "distances_optimal_to_orig", distances_optimal_to_orig,
         "num_generation", num_generation,
         "num_changed_used", num_changed_used,
         "num_changed_needed", num_changed_needed,
@@ -168,13 +175,13 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
 
     println("
         Symbols:                                    $(symbols)  ExpName: $(exp_name)
-        Norm:                                       $(norm_ratio)
+        Norm:                                       $(norm_ratio)  Samples: ($(max_samples_init),$(max_samples_mut))
         Number of correct outcomes:                 $(sum(correct_outcomes) / length(correct_outcomes))
         Average time used:                          $(mean(times))
         Average number of features changed:         $(mean(num_changed_used))
         Average number of features need to changed: $(mean(num_changed_needed))
         Average distances to original:              $(mean(distances_to_original))
-        Average distances to optimal:               $(mean(distances_to_optimal))
+        Average distances to optimal:               $(mean(distances_to_optimal))   Optimal to Orig: $(mean(distances_optimal_to_orig))
         Average generations:                        $(mean(num_generation))
         \n")
 end
@@ -182,16 +189,20 @@ end
 
 include("../credit/credit_setup_MACE.jl");
 
-# thresholds = thresholdGenerator(X, [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MostRecentPaymentAmount])
-thresholds = Dict(:MostRecentBillAmount => 4020.0, :MaxBillAmountOverLast6Months => 4320.0, :AgeGroup => 2.0, :TotalMonthsOverdue => 12.0, :MaxPaymentAmountOverLast6Months => 3050.0, :MostRecentPaymentAmount => 1220.0)
-
-syms1 = (:AgeGroup,)
-syms2 = (:MaxBillAmountOverLast6Months,)
-syms3 = (:MaxBillAmountOverLast6Months, :AgeGroup)
-syms4 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount)
-syms5 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue)
-syms6 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MaxPaymentAmountOverLast6Months)
-syms7 = (:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MaxPaymentAmountOverLast6Months, :MostRecentPaymentAmount)
+vars = [
+    :MaxBillAmountOverLast6Months,
+    :MostRecentBillAmount,
+    :MaxPaymentAmountOverLast6Months,
+    :MostRecentPaymentAmount,
+    :TotalMonthsOverdue,
+    :MonthsWithZeroBalanceOverLast6Months,
+    :MonthsWithLowSpendingOverLast6Months,
+    :MonthsWithHighSpendingOverLast6Months,
+    :AgeGroup,
+    :EducationLevel,
+    :TotalOverdueCounts,
+    :HasHistoryOfOverduePayments
+]
 
 l1_norm = [0.0, 1.0, 0.0, 0.0 ]
 l0_l1_norm = [0.5, 0.5, 0.0, 0.0 ]
@@ -199,153 +210,64 @@ l0_l1_norm = [0.5, 0.5, 0.0, 0.0 ]
 samples1 = (samples_mut = 5, samples_init = 20)
 samples2 = (samples_mut = 10, samples_init = 40)
 samples3 = (samples_mut = 100, samples_init = 300)
+samples = [samples1, samples2, samples3]
 
-for norm_ratio in [l1_norm], num_samples in [samples1, samples2, samples3], syms in [syms1,syms2,syms3,syms4,syms5,syms6,syms7] # [syms1, syms2, syms3, syms4] [l1_norm, l0_l1_norm]
+thresholds = thresholdGenerator(X, vars)
+# thresholds = Dict(:MostRecentBillAmount => 4020.0, :MaxBillAmountOverLast6Months => 4320.0, :AgeGroup => 2.0, :TotalMonthsOverdue => 12.0, :MaxPaymentAmountOverLast6Months => 3050.0, :MostRecentPaymentAmount => 1220.0)
+
+########
+# EXPERIMENT WITH DECREASING ORDER WRT DOMAIN SIZE
+########
+
+symbols = [Tuple(vars[1:i]) for i in 1:length(vars)]
+
+for norm_ratio in [l1_norm], num_samples in samples, syms in symbols
+
     threshs = [thresholds[s] for s in syms]
     this_classifier = @ClassifierGenerator(syms, threshs)
 
     groundTruthExperiment(X, p, this_classifier, syms, threshs;
         norm_ratio=norm_ratio,
         max_samples_init=num_samples.samples_init,
-        max_samples_mut=num_samples.samples_mut
+        max_samples_mut=num_samples.samples_mut,
+        suffix="_decreasing_domain_size"
         )
 end
 
-# Things to consider:
-# -- Different number of changed features --> continuous, categorical, different domain sizes
-# -- What is the distance? How does it compare to the minimum distance?
-# -- # of features changed, and is this equal to the expect number of changes
-# -- number of generations required to find this explanation
-# -- maybe: experiments with monotonicty  (for later)
-
-# classifier_ordinal =  @ClassifierGenerator([:AgeGroup], [thresholds[:AgeGroup]])
-# classifier_numerical = @ClassifierGenerator([:MaxBillAmountOverLast6Months], [thresholds[:MaxBillAmountOverLast6Months]])
-# classifier_length2 = @ClassifierGenerator([:AgeGroup, :MaxBillAmountOverLast6Months], th_2)
-# classifier_length3 = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount], th_3)
-# classifier_length4 = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue], th_4)
-# classifier_length5 = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue], th_5)
-# classifier_length6 = @ClassifierGenerator([:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MostRecentPaymentAmount], th_6)
-
-# println("Only first norm experiments")
-# groundTruthExperiment(X, p, classifier_ordinal, [:AgeGroup])
-# groundTruthExperiment(X, p, classifier_numerical, [:MaxBillAmountOverLast6Months])
-# groundTruthExperiment(X, p, classifier_length2,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup];
-#     norm_ratio=[0,1.0,0,0])
-# groundTruthExperiment(X, p, classifier_length3,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount];
-#     norm_ratio=[0,1.0,0,0])
-# groundTruthExperiment(X, p, classifier_length4,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue];
-#     norm_ratio=[0,1.0,0,0])
-# groundTruthExperiment(X, p, classifier_length5,
-#     [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue];
-#     norm_ratio=[0,1.0,0,0])
-# groundTruthExperiment(X, p, classifier_length6,
-#     [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MostRecentPaymentAmount];
-#     norm_ratio=[0,1.0,0,0])
-
-# println()
-# println("Zero and First Norm experiments")
-# groundTruthExperiment(X, p, classifier_ordinal, [:AgeGroup])
-# groundTruthExperiment(X, p, classifier_numerical, [:MaxBillAmountOverLast6Months])
-# groundTruthExperiment(X, p, classifier_length2,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup];
-#     norm_ratio=[0.5,0.5,0,0])
-# groundTruthExperiment(X, p, classifier_length3,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount];
-#     norm_ratio=[0.5,0.5,0,0])
-# groundTruthExperiment(X, p, classifier_length4,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue];
-#     norm_ratio=[0.5,0.5,0,0])
-# groundTruthExperiment(X, p, classifier_length5,
-#     [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue];
-#     norm_ratio=[0.5,0.5,0,0])
-# groundTruthExperiment(X, p, classifier_length6,
-#     [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MostRecentPaymentAmount];
-#     norm_ratio=[0.5,0.5,0,0])
-
-# println("first norm experiments with large sample")
-# groundTruthExperiment(X, p, classifier_ordinal, [:AgeGroup];
-#     norm_ratio=[0,1.0,0,0],  max_num_samples = 100, max_samples_init = 300)
-# groundTruthExperiment(X, p, classifier_numerical, [:MaxBillAmountOverLast6Months];
-#     norm_ratio=[0,1.0,0,0], max_num_samples = 100, max_samples_init = 100)
-# groundTruthExperiment(X, p, classifier_length2,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup];
-#     norm_ratio=[0,1.0,0,0], max_num_samples = 100, max_samples_init = 300)
-# groundTruthExperiment(X, p, classifier_length3,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount];
-#     norm_ratio=[0,1.0,0,0], max_num_samples = 100, max_samples_init = 300)
-# groundTruthExperiment(X, p, classifier_length4,
-#     [:MaxBillAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue];
-#     norm_ratio=[0,1.0,0,0], max_num_samples = 100, max_samples_init = 300)
-# groundTruthExperiment(X, p, classifier_length5,
-#     [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue];
-#     norm_ratio=[0,1.0,0,0], max_num_samples = 100, max_samples_init = 300)
-# groundTruthExperiment(X, p, classifier_length6,
-#     [:MaxBillAmountOverLast6Months, :MaxPaymentAmountOverLast6Months, :AgeGroup, :MostRecentBillAmount, :TotalMonthsOverdue, :MostRecentPaymentAmount];
-#     norm_ratio=[0,1.0,0,0], max_num_samples = 100, max_samples_init = 300)
+exit(0)
 
 
-# function classifier_ordinal(instances::DataFrame)
-#     ranges = Dict([(:AgeGroup, 3), (:EducationLevel, 3), (:MaxBillAmountOverLast6Months, 50810.0),
-#                     (:MaxPaymentAmountOverLast6Months, 51430.0), (:MonthsWithZeroBalanceOverLast6Months, 6.0),
-#                     (:MonthsWithLowSpendingOverLast6Months, 6.0), (:MonthsWithHighSpendingOverLast6Months, 6.0),
-#                     (:MostRecentBillAmount, 29450.0), (:MostRecentPaymentAmount, 15420.0),
-#                     (:TotalOverdueCounts, 3.0), (:TotalMonthsOverdue, 36.0),
-#                     (:HasHistoryOfOverduePayments, 1)])
-#     score = Array{Float64,1}(undef, nrow(instances))
-#     for i in 1:nrow(instances)
-#         if instances[i,:AgeGroup] >= 3
-#             score[i] =  1
-#         else
-#             norm_distance = abs(3 - instances[i,:AgeGroup]) / ranges[:AgeGroup]
-#             score[i] =  0.5 - 0.5 * norm_distance
-#         end
-#     end
-#     return score
-# end
 
-# function classifier_numerical(instances::DataFrame)
-#     ranges = Dict([(:AgeGroup, 3), (:EducationLevel, 3), (:MaxBillAmountOverLast6Months, 50810.0),
-#                     (:MaxPaymentAmountOverLast6Months, 51430.0), (:MonthsWithZeroBalanceOverLast6Months, 6.0),
-#                     (:MonthsWithLowSpendingOverLast6Months, 6.0), (:MonthsWithHighSpendingOverLast6Months, 6.0),
-#                     (:MostRecentBillAmount, 29450.0), (:MostRecentPaymentAmount, 15420.0),
-#                     (:TotalOverdueCounts, 3.0), (:TotalMonthsOverdue, 36.0),
-#                     (:HasHistoryOfOverduePayments, 1)])
-#     score = Array{Float64,1}(undef, nrow(instances))
-#     for i in 1:nrow(instances)
-#         if instances[i,:MaxBillAmountOverLast6Months] >= 3000
-#             score[i] =  1
-#         else
-#             norm_distance = abs(3000 - instances[i,:MaxBillAmountOverLast6Months]) / ranges[:MaxBillAmountOverLast6Months]
-#             score[i] =  0.5 - 0.5 * norm_distance
-#         end
-#     end
-#     return score
-# end
+########
+# EXPERIMENT WITH INTERLEAVED ORDER WRT DOMAIN SIZE
+########
 
-# function classifier_combined(instances::DataFrame)
-#     ranges = Dict([(:AgeGroup, 3), (:EducationLevel, 3), (:MaxBillAmountOverLast6Months, 50810.0),
-#                     (:MaxPaymentAmountOverLast6Months, 51430.0), (:MonthsWithZeroBalanceOverLast6Months, 6.0),
-#                     (:MonthsWithLowSpendingOverLast6Months, 6.0), (:MonthsWithHighSpendingOverLast6Months, 6.0),
-#                     (:MostRecentBillAmount, 29450.0), (:MostRecentPaymentAmount, 15420.0),
-#                     (:TotalOverdueCounts, 3.0), (:TotalMonthsOverdue, 36.0),
-#                     (:HasHistoryOfOverduePayments, 1)])
+interleaved_vars = [
+    :MaxBillAmountOverLast6Months,
+    :TotalOverdueCounts,
+    :MostRecentBillAmount,
+    :AgeGroup,
+    :MaxPaymentAmountOverLast6Months,
+    :HasHistoryOfOverduePayments
+    :MostRecentPaymentAmount,
+    :TotalMonthsOverdue,
+    :EducationLevel,
+    :MonthsWithZeroBalanceOverLast6Months,
+    :MonthsWithLowSpendingOverLast6Months,
+    :MonthsWithHighSpendingOverLast6Months,
+]
 
-#     score = Array{Float64,1}(undef, nrow(instances))
-#     for i in 1:nrow(instances)
-#         if instances[i,:MaxBillAmountOverLast6Months] >= 1500 && instances[i,:AgeGroup] >= 3 && instances[i,:MostRecentBillAmount] >= 1500 && instances[i,:TotalMonthsOverdue] >= 5
-#             score[i] =  1
-#         else
-#             norm_distance = mean(
-#                 [max(0, 1500 - instances[i,:MaxBillAmountOverLast6Months]) / ranges[:MaxBillAmountOverLast6Months],
-#                 max(0, 3 - instances[i,:AgeGroup]) / ranges[:AgeGroup],
-#                 max(0, 1500 - instances[i,:MostRecentBillAmount]) / ranges[:MostRecentBillAmount],
-#                 max(0, 5 - instances[i,:TotalMonthsOverdue]) / ranges[:TotalMonthsOverdue]])
+symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
 
-#             score[i] =  max(0, 0.5 - norm_distance)
-#         end
-#     end
-#     return score
-# en d
+for norm_ratio in [l1_norm], num_samples in samples, syms in symbols
+
+    threshs = [thresholds[s] for s in syms]
+    this_classifier = @ClassifierGenerator(syms, threshs)
+
+    groundTruthExperiment(X, p, this_classifier, syms, threshs;
+        norm_ratio=norm_ratio,
+        max_samples_init=num_samples.samples_init,
+        max_samples_mut=num_samples.samples_mut,
+        suffix="_interleaved_domain_size"
+        )
+end

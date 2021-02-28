@@ -206,11 +206,12 @@ vars = [
 
 l1_norm = [0.0, 1.0, 0.0, 0.0 ]
 l0_l1_norm = [0.5, 0.5, 0.0, 0.0 ]
+norms = [l1_norm, l0_l1_norm]
 
 samples1 = (samples_mut = 5, samples_init = 20)
-samples2 = (samples_mut = 10, samples_init = 40)
-samples3 = (samples_mut = 100, samples_init = 300)
-samples = [samples1, samples2, samples3]
+samples2 = (samples_mut = 15, samples_init = 60)
+# samples3 = (samples_mut = 100, samples_init = 300)
+samples = [samples1, samples2]
 
 thresholds = thresholdGenerator(X, vars)
 # thresholds = Dict(:MostRecentBillAmount => 4020.0, :MaxBillAmountOverLast6Months => 4320.0, :AgeGroup => 2.0, :TotalMonthsOverdue => 12.0, :MaxPaymentAmountOverLast6Months => 3050.0, :MostRecentPaymentAmount => 1220.0)
@@ -221,7 +222,7 @@ thresholds = thresholdGenerator(X, vars)
 
 symbols = [Tuple(vars[1:i]) for i in 1:length(vars)]
 
-for norm_ratio in [l1_norm], num_samples in samples, syms in symbols
+for norm_ratio in norms, num_samples in samples, syms in symbols
 
     threshs = [thresholds[s] for s in syms]
     this_classifier = @ClassifierGenerator(syms, threshs)
@@ -259,7 +260,7 @@ interleaved_vars = [
 
 symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
 
-for norm_ratio in [l1_norm], num_samples in samples, syms in symbols
+for norm_ratio in norms, num_samples in samples, syms in symbols
 
     threshs = [thresholds[s] for s in syms]
     this_classifier = @ClassifierGenerator(syms, threshs)

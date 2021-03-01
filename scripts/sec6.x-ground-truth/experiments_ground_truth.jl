@@ -45,10 +45,16 @@ function thresholdGenerator(X, symbols)
     threshs = Dict{Symbol,Float64,}()
 
     for symbol in symbols
+        println(symbol)
+
         thresh = 0
         freq = 0
         space = combine(groupby(X, symbol; sort=true), nrow => :count)
-        for row_index in Int(floor(0.3 * nrow(space))):Int(ceil(0.7 * nrow(space)))
+
+        low = max(1,Int(floor(0.3 * nrow(space))))
+        high = min(nrow(space),Int(ceil(0.7 * nrow(space))))
+
+        for row_index in low:high
             if (freq < space[row_index, :count])
                 freq = space[row_index, :count]
                 thresh = space[row_index, symbol]

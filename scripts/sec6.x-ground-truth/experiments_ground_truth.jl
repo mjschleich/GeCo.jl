@@ -70,7 +70,7 @@ end
 
 function groundTruthExperiment(X, p, classifier, symbols, thresholds;
     norm_ratio=[0.5, 0.5, 0, 0],
-    min_num_generations=3,
+    min_num_generations=5,
     max_samples_mut::Int64=5,
     max_samples_init::Int64=20,
     suffix::String="")
@@ -109,7 +109,7 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         time = @elapsed (explanation, count, generation, rep_size) = explain(orig_instance, X, p, classifier;
             norm_ratio=norm_ratio,
             min_num_generations=1,
-            max_num_generations=20,
+            max_num_generations=25,
             max_num_samples=max_samples_mut,
             max_samples_init=max_samples_init,
             convergence_k=1,
@@ -177,6 +177,7 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         "num_generation", num_generation,
         "num_changed_used", num_changed_used,
         "num_changed_needed", num_changed_needed,
+        "outcomes", correct_outcomes,
         "times", times)
 
     println("
@@ -194,6 +195,11 @@ end
 
 
 include("../credit/credit_setup_MACE.jl");
+
+p = initPLAF()
+@PLAF(p, :cf.isMale .== :x.isMale)
+@PLAF(p, :cf.isMarried .== :x.isMarried)
+
 
 vars = [
     :MaxBillAmountOverLast6Months,
@@ -217,7 +223,7 @@ norms = [l1_norm, l0_l1_norm]
 samples1 = (samples_mut = 5, samples_init = 20)
 samples2 = (samples_mut = 15, samples_init = 60)
 # samples3 = (samples_mut = 100, samples_init = 300)
-samples = [samples1, samples2]
+samples = [samples1] # [samples1, samples2]
 
 thresholds = thresholdGenerator(X, vars)
 # thresholds = Dict(:MostRecentBillAmount => 4020.0, :MaxBillAmountOverLast6Months => 4320.0, :AgeGroup => 2.0, :TotalMonthsOverdue => 12.0, :MaxPaymentAmountOverLast6Months => 3050.0, :MostRecentPaymentAmount => 1220.0)
@@ -240,10 +246,6 @@ for norm_ratio in norms, num_samples in samples, syms in symbols
         suffix="_decreasing_domain_size"
         )
 end
-
-exit(0)
-
-
 
 ########
 # EXPERIMENT WITH INTERLEAVED ORDER WRT DOMAIN SIZE

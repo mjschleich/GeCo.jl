@@ -12,20 +12,25 @@ function simBA(orig_instance, X, p, classifier, k, desired_class)
     population = DataFrame(orig_instance)
 
     insertcols!(population,
-            :score => zeros(Float64, 1),
-            :outc => falses(1),
-            :estcf => falses(1),
-            :mod => BitVector[falses(feasible_space.num_features)]
-            )
+        :score => zeros(Float64, 1),
+        :outc => falses(1),
+        :estcf => falses(1),
+        :mod => BitVector[falses(feasible_space.num_features)]
+    )
 
     # we use the score function here to check whether return the good
     # and loop until some good is found
     population.score = GeCo.score(classifier, population, desired_class)
+    population.outc = population.score .> 0.5
+
+    # println(population.outc)
+
+    distance_temp=Vector{Float64}(undef, 25)
 
     index_set = Set(1:length(feasible_space.groups))
 
     num_changes = 0
-    while (!isempty(index_set)) && ((desired_class == 1)  && (population.score[1] < 0.5) || (desired_class == 0) && (population.score[1] > 0.5))
+    while (!isempty(index_set)) && !population.outc[1]
 
         # get the index of the feature group to change
         index = rand(index_set)
@@ -49,15 +54,27 @@ function simBA(orig_instance, X, p, classifier, k, desired_class)
             end
         end
 
-        # calculate the scores
-        population.score = GeCo.score(classifier, population, desired_class)
+        # println(index, feature_names, space[rows, :])
+
+        dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
+            distance_temp=distance_temp, norm_ratio=[0,1.0,0,0])
+
+        preds = GeCo.score(classifier, population, desired_class)
+
+        for i in 1:nrow(population)
+            p = (preds[i] < 0.5)
+            population.score[i] = dist[i] + p * (2.0 - preds[i])
+            population.outc[i] = !p
+        end
+
+        # println(population.score)
 
         # sort by the scores
-        sort!(population, :score; rev=true)
+        sort!(population, :score)
         delete!(population, (2:num_rows))
 
         num_changes += 1
     end
 
-    return population[1,:], ((desired_class == 1) ? (population[1,:score] > 0.5) : (population[1,:score] < 0.5))
+    return population[1,:], population.outc[1]
 end

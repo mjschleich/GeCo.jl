@@ -61,6 +61,30 @@ export mutation!
 include("components/selection.jl")
 export selection!
 
+function explain(orig_array::Array{Float64,1}, data::DataFrame, program::PLAFProgram, classifier;
+    desired_class=1,
+    k::Int64=100,
+    max_num_generations::Int64=100,
+    min_num_generations::Int64=3,
+    max_num_samples::Int64=5,
+    max_samples_init::Int64=20,
+    convergence_k::Int=5,
+    norm_ratio::Array{Float64,1}=default_norm_ratio,
+    domains::Vector{DataFrame}=Vector{DataFrame}(),
+    compress_data::Bool=false,
+    return_df::Bool=false,
+    ablation::Bool=false,
+    run_crossover::Bool=true,
+    run_mutation::Bool=true,
+    size_distance_temp::Int64=nrow(data)*4,
+    verbose::Bool=false
+    )
+    push!(data, orig_array)
+    orig_instance = data[size(data)[1], :]
+    return explain(orig_instance, data, program, classifier)
+
+end
+
 function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProgram, classifier;
     desired_class=1,
     k::Int64=100,

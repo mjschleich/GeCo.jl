@@ -28,7 +28,7 @@ function generateClassifierFunction(features, thresholds)
                     end
                 end
                 if failed_conditions > 0
-                    score[i] = max(0, 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions) / length($features))
+                    score[i] = max(0, 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions)/2 / length($features))
                 else
                     score[i] = 1
                 end
@@ -233,8 +233,8 @@ thresholds = thresholdGenerator(X, vars)
 ########
 
 symbols = [Tuple(vars[1:i]) for i in 1:length(vars)]
-
-for norm_ratio in norms, num_samples in samples, syms in symbols
+syms = symbols[10]
+for norm_ratio in norms, num_samples in samples#, syms in symbols
 
     threshs = [thresholds[s] for s in syms]
     this_classifier = @ClassifierGenerator(syms, threshs)
@@ -251,32 +251,32 @@ end
 # EXPERIMENT WITH INTERLEAVED ORDER WRT DOMAIN SIZE
 ########
 
-interleaved_vars = [
-    :MaxBillAmountOverLast6Months,
-    :TotalOverdueCounts,
-    :MostRecentBillAmount,
-    :AgeGroup,
-    :MaxPaymentAmountOverLast6Months,
-    :HasHistoryOfOverduePayments
-    :MostRecentPaymentAmount,
-    :TotalMonthsOverdue,
-    :EducationLevel,
-    :MonthsWithZeroBalanceOverLast6Months,
-    :MonthsWithLowSpendingOverLast6Months,
-    :MonthsWithHighSpendingOverLast6Months,
-]
+# interleaved_vars = [
+#     :MaxBillAmountOverLast6Months,
+#     :TotalOverdueCounts,
+#     :MostRecentBillAmount,
+#     :AgeGroup,
+#     :MaxPaymentAmountOverLast6Months,
+#     :HasHistoryOfOverduePayments
+#     :MostRecentPaymentAmount,
+#     :TotalMonthsOverdue,
+#     :EducationLevel,
+#     :MonthsWithZeroBalanceOverLast6Months,
+#     :MonthsWithLowSpendingOverLast6Months,
+#     :MonthsWithHighSpendingOverLast6Months,
+# ]
 
-symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
+# symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
 
-for norm_ratio in norms, num_samples in samples, syms in symbols
+# for norm_ratio in norms, num_samples in samples , syms in symbols
 
-    threshs = [thresholds[s] for s in syms]
-    this_classifier = @ClassifierGenerator(syms, threshs)
+#     threshs = [thresholds[s] for s in syms]
+#     this_classifier = @ClassifierGenerator(syms, threshs)
 
-    groundTruthExperiment(X, p, this_classifier, syms, threshs;
-        norm_ratio=norm_ratio,
-        max_samples_init=num_samples.samples_init,
-        max_samples_mut=num_samples.samples_mut,
-        suffix="_interleaved_domain_size"
-        )
-end
+#     groundTruthExperiment(X, p, this_classifier, syms, threshs;
+#         norm_ratio=norm_ratio,
+#         max_samples_init=num_samples.samples_init,
+#         max_samples_mut=num_samples.samples_mut,
+#         suffix="_interleaved_domain_size"
+#         )
+# end

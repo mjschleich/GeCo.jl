@@ -1163,7 +1163,7 @@ empty!(p_no_group.groups)
 
 ### COLLECTIONS
 
-constraint_variatations = [PLAFProgram(), p_all, p_no_imp, p_no_increase, p_only_group, p_no_group]
+constraint_variations = [PLAFProgram(), p_all, p_no_imp, p_no_increase, p_only_group, p_no_group]
 constraint_descriptions = ["p_empty", "p_all", "p_no_imp", "p_no_increasing", "p_only_group", "p_no_group"]
 
 

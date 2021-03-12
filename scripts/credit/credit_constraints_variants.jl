@@ -37,7 +37,7 @@ p_no_increasing = initPLAF()
 
 ### COLLECTIONS
 
-constraint_variatations = [PLAFProgram(), p_all, p_no_imp, p_no_increasing]
+constraint_variations = [PLAFProgram(), p_all, p_no_imp, p_no_increasing]
 constraint_descriptions = ["p_empty", "p_all", "p_no_imp", "p_no_increasing"]
 
 

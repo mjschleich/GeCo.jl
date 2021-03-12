@@ -78,11 +78,10 @@ empty!(p_only_group.implications)
 
 ### ALL CONSTRAINTS NO GROUPS
 
-p_no_group = PLAFProgram(p_all)
-empty!(p_no_group.groups)
-
+# p_no_group = PLAFProgram(p_all)
+# empty!(p_no_group.groups)
 
 ### COLLECTIONS
 
-constraint_variatations = [PLAFProgram(), p_all, p_no_imp, p_no_increasing, p_only_group, p_no_group]
-constraint_descriptions = ["p_empty", "p_all", "p_no_imp", "p_no_increasing", "p_only_group", "p_no_group"]
+constraint_variations = [PLAFProgram(), p_all, p_no_imp, p_no_increasing, p_only_group]
+constraint_descriptions = ["p_empty", "p_all", "p_no_imp", "p_no_increasing", "p_only_group"]

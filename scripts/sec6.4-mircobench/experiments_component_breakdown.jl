@@ -18,7 +18,7 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
     end
 
     println("Computing Predictions: ($(Dates.now()))")
-    predictions = if classifier isa PyCall.PyObject
+    predictions = @time if classifier isa PyCall.PyObject
             mode.(ScikitLearn.predict(classifier, MLJ.matrix(X)))
         else
             MLJ.predict_mode(classifier, X)

@@ -45,13 +45,11 @@ function thresholdGenerator(X, symbols)
     threshs = Dict{Symbol,Float64,}()
 
     for symbol in symbols
-        println(symbol)
-
         thresh = 0
         freq = 0
         space = combine(groupby(X, symbol; sort=true), nrow => :count)
 
-        low = max(1,Int(floor(0.3 * nrow(space))))
+        low = max(2,Int(floor(0.3*nrow(space))))
         high = min(nrow(space),Int(ceil(0.7 * nrow(space))))
 
         for row_index in low:high
@@ -158,6 +156,8 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         push!(times, time)
     end
 
+    println(explained)
+
     ratio =
         if norm_ratio == [0.0,1.0,0.0,0.0]
         "l1_norm"
@@ -200,7 +200,6 @@ p = initPLAF()
 @PLAF(p, :cf.isMale .== :x.isMale)
 @PLAF(p, :cf.isMarried .== :x.isMarried)
 
-
 vars = [
     :MaxBillAmountOverLast6Months,
     :MostRecentBillAmount,
@@ -234,49 +233,53 @@ thresholds = thresholdGenerator(X, vars)
 
 symbols = [Tuple(vars[1:i]) for i in 1:length(vars)]
 
-for norm_ratio in norms, num_samples in samples, syms in symbols
+symbols = [Tuple(vars[1:10])]
+norms = [l1_norm]
 
-    threshs = [thresholds[s] for s in syms]
-    this_classifier = @ClassifierGenerator(syms, threshs)
+# for norm_ratio in norms, num_samples in samples, syms in symbols
 
-    groundTruthExperiment(X, p, this_classifier, syms, threshs;
-        norm_ratio=norm_ratio,
-        max_samples_init=num_samples.samples_init,
-        max_samples_mut=num_samples.samples_mut,
-        suffix="_decreasing_domain_size"
-        )
-end
+#     threshs = [thresholds[s] for s in syms]
+#     this_classifier = @ClassifierGenerator(syms, threshs)
+
+#     groundTruthExperiment(X, p, this_classifier, syms, threshs;
+#         norm_ratio=norm_ratio,
+#         max_samples_init=num_samples.samples_init,
+#         max_samples_mut=num_samples.samples_mut,
+#         suffix="_decreasing_domain_size"
+#         )
+# end
+
 
 ########
 # EXPERIMENT WITH INTERLEAVED ORDER WRT DOMAIN SIZE
 ########
 
-interleaved_vars = [
-    :MaxBillAmountOverLast6Months,
-    :TotalOverdueCounts,
-    :MostRecentBillAmount,
-    :AgeGroup,
-    :MaxPaymentAmountOverLast6Months,
-    :HasHistoryOfOverduePayments
-    :MostRecentPaymentAmount,
-    :TotalMonthsOverdue,
-    :EducationLevel,
-    :MonthsWithZeroBalanceOverLast6Months,
-    :MonthsWithLowSpendingOverLast6Months,
-    :MonthsWithHighSpendingOverLast6Months,
-]
+# interleaved_vars = [
+#     :MaxBillAmountOverLast6Months,
+#     :TotalOverdueCounts,
+#     :MostRecentBillAmount,
+#     :AgeGroup,
+#     :MaxPaymentAmountOverLast6Months,
+#     :HasHistoryOfOverduePayments
+#     :MostRecentPaymentAmount,
+#     :TotalMonthsOverdue,
+#     :EducationLevel,
+#     :MonthsWithZeroBalanceOverLast6Months,
+#     :MonthsWithLowSpendingOverLast6Months,
+#     :MonthsWithHighSpendingOverLast6Months,
+# ]
 
-symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
+# symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
 
-for norm_ratio in norms, num_samples in samples, syms in symbols
+# for norm_ratio in norms, num_samples in samples, syms in symbols
 
-    threshs = [thresholds[s] for s in syms]
-    this_classifier = @ClassifierGenerator(syms, threshs)
+#     threshs = [thresholds[s] for s in syms]
+#     this_classifier = @ClassifierGenerator(syms, threshs)
 
-    groundTruthExperiment(X, p, this_classifier, syms, threshs;
-        norm_ratio=norm_ratio,
-        max_samples_init=num_samples.samples_init,
-        max_samples_mut=num_samples.samples_mut,
-        suffix="_interleaved_domain_size"
-        )
-end
+#     groundTruthExperiment(X, p, this_classifier, syms, threshs;
+#         norm_ratio=norm_ratio,
+#         max_samples_init=num_samples.samples_init,
+#         max_samples_mut=num_samples.samples_mut,
+#         suffix="_interleaved_domain_size"
+#         )
+# end

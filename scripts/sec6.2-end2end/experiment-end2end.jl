@@ -2,7 +2,7 @@
 using Pkg; Pkg.activate(".")
 using GeCo, DataFrames, Random
 
-include("../../competitors/SimBA.jl")
+include("../../competitors/SimCF.jl")
 
 Random.seed!(19)
 
@@ -17,9 +17,9 @@ println(generation)
 
 # Random.seed!(19)
 
-closest_entity, correct_outcome = simBA(orig_instance, X, p, classifier, 5, 1)
+closest_entity, correct_outcome = simCF(orig_instance, X, p, classifier, 5, 1)
 
-println("SimBA actions: $(correct_outcome)")
+println("SimCF actions: $(correct_outcome)")
 actions(DataFrame(closest_entity), orig_instance)
 
 Random.seed!(19)

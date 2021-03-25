@@ -5,7 +5,7 @@ using GeCo, DataFrames, JLD, StatsBase
 # Sample k points from feasible space for this feature group (let’s use k = 5 for now)
 # Compute score for updated instance, and pick the best one
 # If outcome = desired outcome, then stop, else repeat from 1.
-function simBA(orig_instance, X, p, classifier, k, desired_class)
+function simCF(orig_instance, X, p, classifier, k, desired_class)
 
     feasible_space = feasibleSpace(X, orig_instance, p)
 

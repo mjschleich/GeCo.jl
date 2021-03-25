@@ -28,7 +28,7 @@ function generateClassifierFunction(features, thresholds)
                     end
                 end
                 if failed_conditions > 0
-                    score[i] = max(0, 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions) / length($features))
+                    score[i] = 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions) / length($features)
                 else
                     score[i] = 1
                 end
@@ -51,7 +51,7 @@ function thresholdGenerator(X, symbols)
         freq = 0
         space = combine(groupby(X, symbol; sort=true), nrow => :count)
 
-        low = max(1,Int(floor(0.3 * nrow(space))))
+        low = max(2,Int(floor(0.3 * nrow(space))))
         high = min(nrow(space),Int(ceil(0.7 * nrow(space))))
 
         for row_index in low:high
@@ -91,7 +91,6 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
     times = Array{Float64,1}()
 
     predictions = classifier(X)
-
 
     for i in 1:nrow(X)
 
@@ -222,8 +221,9 @@ norms = [l1_norm, l0_l1_norm]
 
 samples1 = (samples_mut = 5, samples_init = 20)
 samples2 = (samples_mut = 15, samples_init = 60)
-# samples3 = (samples_mut = 100, samples_init = 300)
-samples = [samples1] # [samples1, samples2]
+samples3 = (samples_mut = 25, samples_init = 100)
+#samples3 = (samples_mut = 100, samples_init = 300)
+samples = [samples1, samples2, samples3]
 
 thresholds = thresholdGenerator(X, vars)
 # thresholds = Dict(:MostRecentBillAmount => 4020.0, :MaxBillAmountOverLast6Months => 4320.0, :AgeGroup => 2.0, :TotalMonthsOverdue => 12.0, :MaxPaymentAmountOverLast6Months => 3050.0, :MostRecentPaymentAmount => 1220.0)
@@ -234,6 +234,7 @@ thresholds = thresholdGenerator(X, vars)
 
 symbols = [Tuple(vars[1:i]) for i in 1:length(vars)]
 
+
 for norm_ratio in norms, num_samples in samples, syms in symbols
 
     threshs = [thresholds[s] for s in syms]
@@ -243,9 +244,10 @@ for norm_ratio in norms, num_samples in samples, syms in symbols
         norm_ratio=norm_ratio,
         max_samples_init=num_samples.samples_init,
         max_samples_mut=num_samples.samples_mut,
-        suffix="_decreasing_domain_size"
+        suffix="decreasing_domain_size_no_max"
         )
 end
+
 
 ########
 # EXPERIMENT WITH INTERLEAVED ORDER WRT DOMAIN SIZE
@@ -257,7 +259,7 @@ interleaved_vars = [
     :MostRecentBillAmount,
     :AgeGroup,
     :MaxPaymentAmountOverLast6Months,
-    :HasHistoryOfOverduePayments
+    :HasHistoryOfOverduePayments,
     :MostRecentPaymentAmount,
     :TotalMonthsOverdue,
     :EducationLevel,
@@ -277,6 +279,6 @@ for norm_ratio in norms, num_samples in samples, syms in symbols
         norm_ratio=norm_ratio,
         max_samples_init=num_samples.samples_init,
         max_samples_mut=num_samples.samples_mut,
-        suffix="_interleaved_domain_size"
+        suffix="interleaved_domain_size_no_max"
         )
 end

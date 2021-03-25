@@ -28,7 +28,7 @@ function generateClassifierFunction(features, thresholds)
                     end
                 end
                 if failed_conditions > 0
-                    score[i] = max(0, 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions) / length($features))
+                    score[i] = 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions) / length($features)
                 else
                     score[i] = 1
                 end
@@ -89,7 +89,6 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
     times = Array{Float64,1}()
 
     predictions = classifier(X)
-
 
     for i in 1:nrow(X)
 
@@ -221,8 +220,9 @@ norms = [l1_norm, l0_l1_norm]
 
 samples1 = (samples_mut = 5, samples_init = 20)
 samples2 = (samples_mut = 15, samples_init = 60)
-# samples3 = (samples_mut = 100, samples_init = 300)
-samples = [samples1] # [samples1, samples2]
+samples3 = (samples_mut = 25, samples_init = 100)
+#samples3 = (samples_mut = 100, samples_init = 300)
+samples = [samples1, samples2, samples3]
 
 thresholds = thresholdGenerator(X, vars)
 # thresholds = Dict(:MostRecentBillAmount => 4020.0, :MaxBillAmountOverLast6Months => 4320.0, :AgeGroup => 2.0, :TotalMonthsOverdue => 12.0, :MaxPaymentAmountOverLast6Months => 3050.0, :MostRecentPaymentAmount => 1220.0)
@@ -232,8 +232,6 @@ thresholds = thresholdGenerator(X, vars)
 ########
 
 symbols = [Tuple(vars[1:i]) for i in 1:length(vars)]
-
-symbols = [Tuple(vars[1:10])]
 norms = [l1_norm]
 
 # for norm_ratio in norms, num_samples in samples, syms in symbols
@@ -250,36 +248,37 @@ norms = [l1_norm]
 # end
 
 
+
 ########
 # EXPERIMENT WITH INTERLEAVED ORDER WRT DOMAIN SIZE
 ########
 
-# interleaved_vars = [
-#     :MaxBillAmountOverLast6Months,
-#     :TotalOverdueCounts,
-#     :MostRecentBillAmount,
-#     :AgeGroup,
-#     :MaxPaymentAmountOverLast6Months,
-#     :HasHistoryOfOverduePayments
-#     :MostRecentPaymentAmount,
-#     :TotalMonthsOverdue,
-#     :EducationLevel,
-#     :MonthsWithZeroBalanceOverLast6Months,
-#     :MonthsWithLowSpendingOverLast6Months,
-#     :MonthsWithHighSpendingOverLast6Months,
-# ]
+interleaved_vars = [
+    :MaxBillAmountOverLast6Months,
+    :TotalOverdueCounts,
+    :MostRecentBillAmount,
+    :AgeGroup,
+    :MaxPaymentAmountOverLast6Months,
+    :HasHistoryOfOverduePayments,
+    :MostRecentPaymentAmount,
+    :TotalMonthsOverdue,
+    :EducationLevel,
+    :MonthsWithZeroBalanceOverLast6Months,
+    :MonthsWithLowSpendingOverLast6Months,
+    :MonthsWithHighSpendingOverLast6Months,
+]
 
-# symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
+symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
 
-# for norm_ratio in norms, num_samples in samples, syms in symbols
+for norm_ratio in norms, num_samples in samples, syms in symbols
 
-#     threshs = [thresholds[s] for s in syms]
-#     this_classifier = @ClassifierGenerator(syms, threshs)
+    threshs = [thresholds[s] for s in syms]
+    this_classifier = @ClassifierGenerator(syms, threshs)
 
-#     groundTruthExperiment(X, p, this_classifier, syms, threshs;
-#         norm_ratio=norm_ratio,
-#         max_samples_init=num_samples.samples_init,
-#         max_samples_mut=num_samples.samples_mut,
-#         suffix="_interleaved_domain_size"
-#         )
-# end
+    groundTruthExperiment(X, p, this_classifier, syms, threshs;
+        norm_ratio=norm_ratio,
+        max_samples_init=num_samples.samples_init,
+        max_samples_mut=num_samples.samples_mut,
+        suffix="interleaved_domain_size"
+        )
+end

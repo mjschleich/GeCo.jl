@@ -63,11 +63,10 @@ function runExperimentConstraintEffect(X::DataFrame, programs::Vector{PLAFProgra
                         domains=domains,
                         desired_class=desired_class,
                         verbose=false,
+			min_num_generations=5,
+			max_num_generations=5,
                         norm_ratio=nratio,
                         compress_data=compress)
-
-
-                println(time)
 
                 dist = distance(explanation[1:3, :], orig_instance, num_features, ranges;
                     norm_ratio=[0, 1.0, 0, 0],
@@ -108,7 +107,7 @@ function runExperimentConstraintEffect(X::DataFrame, programs::Vector{PLAFProgra
     end
 end
 
-for dataset in ["adult", "credit", "yelp"]          # ["adult", "credit", "yelp"]
+for dataset in ["adult", "credit"]          # ["adult", "credit", "yelp"]
 
     if dataset ∈ ["adult", "credit"]
         include("../$(dataset)/$(dataset)_setup_MACE.jl")

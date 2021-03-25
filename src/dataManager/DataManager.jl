@@ -1,26 +1,29 @@
-struct DataManager
-    orig_entity::DataFrameRow
+mutable struct DataManager
+    orig_instance::DataFrameRow
     dict::Dict{BitVector, DataFrame}
     extended::Bool
 end
 
-initializeManager(orig_entity; extended=false) = begin
-    DataManager(orig_entity, Dict{BitVector, DataFrame}(), extended)
+initializeManager(orig_instance; extended=false) = begin
+    DataManager(orig_instance, Dict{BitVector, DataFrame}(), extended)
+end
+
+get_store_impl(dict::Dict{BitVector, DataFrame}, mod::BitVector, orig_instance, extended) = begin
+    if haskey(dict, mod)
+        return dict[mod]
+    else
+        keyList = [key for (i,key) in enumerate(keys(orig_instance)) if mod[i]]
+        dict[mod] = DataFrame([typeof(orig_instance[key])[] for key in keyList], keyList)
+
+        # We extend the df with the extra columns for the genetic algorithm
+        extended && insertcols!(dict[mod], :score=>Float64[], :outc=>Bool[], :estcf=>Bool[])
+
+        return dict[mod]
+    end
 end
 
 get_store(manager::DataManager, mod::BitVector) = begin
-    if haskey(manager.dict, mod)
-        return manager.dict[mod]
-    else
-        orig_entity = manager.orig_entity
-        keyList = [key for (i,key) in enumerate(keys(orig_entity)) if mod[i]]
-        manager.dict[mod] = DataFrame([typeof(orig_entity[key])[] for key in keyList], keyList)
-
-        # We extend the df with the extra columns for the genetic algorithm
-        manager.extended && insertcols!(manager.dict[mod], :score=>Float64[], :outc=>Bool[], :estcf=>Bool[])
-
-        return manager.dict[mod]
-    end
+    get_store_impl(manager.dict, mod, manager.orig_instance, manager.extended)
 end
 
 function Base.empty!(manager::DataManager)
@@ -65,7 +68,7 @@ end
 function materialize(manager::DataManager)::DataFrame
 
     num_rows= size(manager,1)
-    df = repeat(DataFrame(manager.orig_entity), num_rows)
+    df = repeat(DataFrame(manager.orig_instance), num_rows)
 
     insertcols!(df,
         :score=>zeros(Float64, num_rows),
@@ -97,4 +100,17 @@ end
 
 function Base.show(io::IO, manager::DataManager)
     print(io, "Data Manager (Groups=$(length(manager.dict)),  Entities=$(size(manager,1)))")
+end
+
+struct DeltaDataFrameWrapper
+    instance:: DataFrameRow
+    orig_instance:: DataFrameRow
+end
+
+function Base.getproperty(wrapper::DeltaDataFrameWrapper, property::Symbol)
+    if haskey(getfield(wrapper, :instance), property)
+        getproperty(getfield(wrapper, :instance), property)
+    else
+        getproperty(getfield(wrapper, :orig_instance), property)
+    end
 end

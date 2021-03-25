@@ -1,61 +1,51 @@
-using CSV, Statistics, DataFrames, MLJ
+using CSV, Statistics, DataFrames, MLJ, Serialization
 
-path = "data/yelp"
-data = CSV.File(path*"/yelp_data.csv"; limit=1000000) |> DataFrame
-data.high_ranking = Int64.(data.review_stars .> 3)
+const loadData = false
+const learnModel = true
+const path = "data/yelp"
 
-## Reduce number of cities:
-city_gb = combine(groupby( data, :city_id), nrow => :count)
-sort!(city_gb, :count, rev=true)
-top_cities = city_gb.city_id[1:499]
-data.city = [(city in top_cities) ? city : 500 for city in data.city_id]
+if loadData
+    include("yelp_data_load.jl")
 
-## Reduce number of categories:
-categ_gb = combine(groupby(data, :category_id), nrow => :count)
-sort!(categ_gb, :count, rev=true)
-top_categories = categ_gb.category_id[1:499]
-data.category = [(categ in top_categories) ? categ : 500 for categ in data.category_id]
+    serialize(path*"/train_data.bin", X)
+    serialize(path*"/train_data_y.bin", y)
+else
+    X = deserialize(path*"/train_data_less_categ.bin")
+    y = deserialize(path*"/train_data_y_less_categ.bin")
+end
 
-select!(data, Not([:review_stars,:business_id,:user_id,:review_id,:category_id, :city_id]))
+if learnModel
+    println("Learning Partial RF model")
 
-y, X = unpack(data, ==(:high_ranking), colname -> true);
-y = categorical(y)
+    # load the model
+    tree_model = @load RandomForestClassifier pkg=DecisionTree
+    tree_model.max_depth = 10
 
-# change the input to the type they want
-coerce!(X,
-    :city => Multiclass,
-    :state_id => Multiclass,
-    :category => Multiclass
-)
+    # split the dataset
+    train, test = partition(eachindex(y), 0.7, shuffle=true)
+    classifier = machine(tree_model, X, y)
 
-onehot_columns = [:city, :state_id, :category]
+    # train
+    MLJ.fit!(classifier, rows=train)
 
-# # one-hot encode
-onehot_encoder = OneHotEncoder(; features=onehot_columns, drop_last=false, ordered_factor=false)
-onehot_machine = machine(onehot_encoder, X)
-MLJ.fit!(onehot_machine)
-X = MLJ.transform(onehot_machine, X)
+    ## Evaluation:
+    yhat_train = MLJ.predict(classifier, X[train,:])
+    yhat_test = MLJ.predict(classifier, X[test,:])
 
-# load the model
-tree_model = @load RandomForestClassifier pkg=DecisionTree
-tree_model.max_depth = 10
+    println("Accuracy train data: $(accuracy(mode.(yhat_train), y[train]))")
+    println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
 
-# split the dataset
-train, test = partition(eachindex(y), 0.7, shuffle=true)
-mlj_classifier = machine(tree_model, X, y)
+    serialize(path*"/prf_classifier_less_cated.bin",  classifier)
 
-# train
-MLJ.fit!(mlj_classifier, rows=train)
+else
 
+    println("Loading Partial RF model")
+    classifier = deserialize(path*"/prf_classifier.bin")
+end
 
-## Evaluation:
-yhat_train = MLJ.predict(mlj_classifier, X[train,:])
-yhat_test = MLJ.predict(mlj_classifier, X[test,:])
+orig_instance = X[536, :]
 
-println("Accuracy train data: $(accuracy(mode.(yhat_train), y[train]))")
-println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
+# partial_classifier = initPartialRandomForestEval(classifier, orig_instance, 1);
+# full_classifier = initRandomForestEval(classifier, orig_instance, 1);
 
-orig_entity = X[536, :]
-
-classifier = initPartialRandomForestEval(mlj_classifier, orig_entity, 1);
-full_classifier = initRandomForestEval(mlj_classifier, orig_entity, 1);
+include("yelp_constraints.jl")

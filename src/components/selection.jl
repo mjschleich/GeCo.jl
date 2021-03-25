@@ -1,35 +1,32 @@
 
-
 ## Selection operator which finds the top-k CF entities
-function selection!(population::DataFrame, k::Int64, orig_entity::DataFrameRow, features::Dict{String,Feature}, classifier, desired_class;
+function selection!(population::DataFrame, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
     distance_temp::Vector{Float64}=Vector{Float64}())
 
-    preds = score(classifier, population, desired_class)
-    # preds = score_full_entity(classifier, population, desired_class)
+    preds::Vector{Float64} = score(classifier, population, desired_class)
 
-    if length(distance_temp) < size(population,1)*4
-        @warn "We increase the size of distance_temp in selection operator"
-        resize!(distance_temp, size(population,1)*4)
-    end
+    dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
+        distance_temp=distance_temp, norm_ratio=norm_ratio)
 
-    dist = distance(population, orig_entity, features, distance_temp; norm_ratio=norm_ratio)
+    # population.outc = pred .> 0.5
+    # population.score = dist + map(predp -> !predp[2] ? 2.0 - predp[1] : 0.0, zip(preds, population.outc))
+
     for i in 1:nrow(population)
-        p = (preds[i] > 0.5)
-        population[i, :score] = dist[i] + (!p ? 2.0 - preds[i] : 0.0)
-        population[i, :outc] = p
+        p = (preds[i] < 0.5)
+        population.score[i] = dist[i] + p * (2.0 - preds[i])
+        population.outc[i] = !p
     end
 
-    sort!(population, [:score])     # TODO:  Can we optimize this?
+    # TODO: Can we optimize this?
+    sort!(population, [:score])
 
     # We keep the top-k counterfactuals
     (size(population,1) > k) && delete!(population, (k+1:size(population,1)))
 
     # Check if the top-K are established CFs, if so we have converged
     converged = all(population.estcf[1:convergence_k])
-
-    # println(converged, convergence_k, population.estcf)
 
     # Update the established CFs
     population.estcf .= true
@@ -40,7 +37,7 @@ end
 predict(classifier::PartialRandomForestEval,entities,mod) = RandomForestEvaluation.predict(classifier,entities,mod)
 predict(classifier::PartialMLPEval,entities,mod) = MLPEvaluation.predict(classifier,entities[:,1:end-NUM_EXTRA_COL+1],mod) # plus one because `mod` field is not in the DataManager entities
 
-function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, features::Dict{String,Feature}, classifier::Union{PartialRandomForestEval, PartialMLPEval}, desired_class;
+function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier::Union{PartialRandomForestEval, PartialMLPEval}, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
     distance_temp::Vector{Float64}=Vector{Float64}())
@@ -48,23 +45,20 @@ function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, f
     scores = Vector{Tuple{Float64,Bool}}()
 
     max_num_entity = maximum(nrow(entities) for entities in values(manager.dict))
-    # println(max_num_entity, size(distance_temp))
-    if length(distance_temp) < size(max_num_entity,1)*4
-        @warn "We increase the size of distance_temp in selection operator"
-        resize!(distance_temp,  4 * size(manager,1))
-    end
-
-    # Used by the distance function
 
     for (mod, entities) in manager.dict
-        pred::Vector{Float64} = vec(predict(classifier, entities, mod))
+        # println(" -- ")
+        pred::Vector{Float64} = predict(classifier, entities, mod)
 
-        dist = distance(entities, orig_entity, features, distance_temp)
-        entities.outc = pred .> 0.5
-        entities.score = dist + map(predp -> !predp[2] ? 2.0 - predp[1] : 0.0, zip(pred, entities.outc))
+        dist::Vector{Float64} = distance(entities, orig_instance, feasible_space.num_features, feasible_space.ranges;
+            distance_temp=distance_temp, norm_ratio=norm_ratio)
+
+        outc::BitVector = pred .> 0.5
+        entities.outc = outc
+        entities.score = dist + map(predp -> predp[2] * ( 2.0 - predp[1] ), zip(pred, outc))
 
         # dist + !p ? 2.0 - pred : 0.0
-        append!(scores, zip(entities.score, entities.estcf))
+        append!(scores, zip(entities.score::Vector{Float64}, entities.estcf::Vector{Bool}))
     end
 
     sort!(scores, by=first)
@@ -76,7 +70,7 @@ function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, f
         # We keep the top-k counterfactuals
         for mod in keyList
             entities = manager.dict[mod]
-            keeps = entities.score .<= scores[k][1]
+            keeps::BitVector = entities.score .<= scores[k][1]
             select!(manager, mod, keeps)
 
             if isempty(manager.dict[mod])
@@ -100,14 +94,14 @@ function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, f
     return converged
 end
 
-function selection!(manager::DataManager, k::Int64, orig_entity::DataFrameRow, features::Dict{String,Feature}, classifier::Union{MLJ.Machine, PyCall.PyObject}, desired_class;
+function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier::Union{MLJ.Machine, PyCall.PyObject}, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
     distance_temp::Vector{Float64}=Vector{Float64}(undef,100))
 
     df = materialize(manager)
 
-    res = selection!(df, k, orig_entity, features, classifier, desired_class;
+    res = selection!(df, k, orig_instance, feasible_space, classifier, desired_class;
         norm_ratio = norm_ratio, convergence_k = convergence_k, distance_temp = distance_temp)
 
     empty!(manager)

@@ -41,6 +41,6 @@ train, test = partition(eachindex(y), 0.7, shuffle=true)
 # # train
 ScikitLearn.fit!(mlj_classifier, MLJ.matrix(X[train,:]), vec(collect(Int, y[train,:])))
 
-orig_entity = X[14, :]
+orig_instance = X[14, :]
 
-classifier = initMLPEval(mlj_classifier,orig_entity)
+classifier = initMLPEval(mlj_classifier,orig_instance)

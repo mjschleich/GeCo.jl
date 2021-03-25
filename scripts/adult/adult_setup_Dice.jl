@@ -37,8 +37,10 @@ coerce!(X,
 )
 
 classifier = torch.load("./data/adult/adult_dice_model.pth")
-orig_entity = X[6,:]
+orig_instance = X[6,:]
 
-#in = torch.tensor(convert(Array, orig_entity)).float()
+include("adult_constraints_DICE.jl")
+
+#in = torch.tensor(convert(Array, orig_instance)).float()
 #label = classifier(in).float()
 #label.detach().numpy()[1]

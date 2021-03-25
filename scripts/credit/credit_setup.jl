@@ -47,7 +47,7 @@ classifier = machine(tree_model, X, y)
 # train
 MLJ.fit!(classifier, rows=train)
 
-orig_entity = X[14, :]
+orig_instance = X[14, :]
 
 # using ScikitLearn
 # @sk_import tree: DecisionTreeClassifier

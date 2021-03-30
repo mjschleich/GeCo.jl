@@ -80,8 +80,21 @@ function explain(orig_array::Array{Float64,1}, data::DataFrame, program::PLAFPro
     verbose::Bool=false
     )
     push!(data, orig_array)
+    
     orig_instance = data[size(data)[1], :]
-    return explain(orig_instance, data, program, classifier)
+    orig_frame = DataFrame(orig_instance)
+    insertcols!(orig_frame,
+            :score=>0,
+            :outc=>false,
+            :estcf=>false,
+            :mod=>BitVector[falses(length(orig_instance))]
+            )
+    if (score(classifier, orig_frame, desired_class)[1] > 0.5)
+        # already a good instance, we shouldn't call GECO to explan
+        return orig_frame, true
+    end
+    explains, = explain(orig_instance, data, program, classifier)
+    return explains, false
 
 end
 

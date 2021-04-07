@@ -66,12 +66,6 @@ explanation,  = @time explain(orig_instance, X,p_user, classifier)
 md""" # The credit interactive setting experiment with user input values
 """
 
-# ╔═╡ bd974756-1025-410f-bb14-e428cbbc9586
-instance = deepcopy(orig_instance)
-
-# ╔═╡ e0b559fb-6158-45ca-932f-e099eff694e2
-instance.isMale = 0
-
 # ╔═╡ 120b4a66-7b1f-11eb-3b6a-ad33435c800a
 md"""
 * isMale： $(@bind isMale NumberField(1:100000; default=1))
@@ -91,7 +85,13 @@ md"""
 """
 
 # ╔═╡ dccd3e6a-7b30-11eb-0064-bbbe89fd7b20
-user_input = [isMale, isMarried, AgeGroup, EducationLevel, MaxBillAmountOverLast6Months, MaxPaymentAmountOverLast6Months, MonthsWithZeroBalanceOverLast6Months, MonthsWithLowSpendingOverLast6Months, MonthsWithHighSpendingOverLast6Months, MostRecentBillAmount, MostRecentPaymentAmount, TotalOverdueCounts, TotalMonthsOverdue, HasHistoryOfOverduePayments];
+begin
+	instance = deepcopy(orig_instance);
+	
+	user_input = [isMale, isMarried, AgeGroup, EducationLevel, MaxBillAmountOverLast6Months, MaxPaymentAmountOverLast6Months, MonthsWithZeroBalanceOverLast6Months, MonthsWithLowSpendingOverLast6Months, MonthsWithHighSpendingOverLast6Months, MostRecentBillAmount, MostRecentPaymentAmount, TotalOverdueCounts, TotalMonthsOverdue, HasHistoryOfOverduePayments];
+
+	nothing
+end
 
 # ╔═╡ cc7fbb06-1dda-4e40-9813-db6c79226583
 for (fidx, feature) in enumerate(propertynames(instance))
@@ -127,27 +127,8 @@ end;
 md"""### None Interactive Display (keep for possible later use)
 """
 
-# ╔═╡ 02557d70-e152-48a2-a998-7530107ff334
-function localactions(counterfactuals::DataFrame, orig_instance; num_actions = 5)
-	features = propertynames(counterfactuals)[1:end-4]
-	out = ""
-    for idx in 1:min(num_actions, nrow(counterfactuals))
-        cf = counterfactuals[idx,:]
-        out *= "\\\n**COUNTERFACTUAL $(idx)**\\\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)\\\n"
-        for (fidx, feature) in enumerate(features)
-            if cf[feature] != orig_instance[fidx]
-                out*= "$feature : \t$(orig_instance[fidx])  => $(cf[feature])\\\n"
-            end
-        end
-    end
-    out
-end
-
 # ╔═╡ a1d5dfc9-b9bf-4e61-9124-ed1e9311c1a7
-begin
-	s = localactions(user_explanations, user_input)
-	Markdown.parse(s)
-end
+Markdown.parse(GeCo.actions(user_explanations, instance; num_actions=3))
 
 # ╔═╡ bd5fa046-9164-11eb-29be-f322fc51efbb
 md"""### TOP ACTIONS DISPLAY
@@ -155,7 +136,7 @@ md"""### TOP ACTIONS DISPLAY
 
 # ╔═╡ c9a8e04e-9162-11eb-3775-951d2f9e3933
 md"""
-* num_actions(the number of counterfactuals show in)： $(@bind actions NumberField(1:100000; default=5))
+Number of actions to display: $(@bind actions NumberField(1:100000; default=5))
 """
 
 # ╔═╡ 5f7dacec-915b-11eb-25d3-75cbcf652e5e
@@ -253,19 +234,16 @@ end
 # ╠═dc4a497c-7b19-11eb-2f9e-ed3c114f7761
 # ╠═9841f2fe-7b2b-11eb-3e2d-f315722ca81d
 # ╟─a7036948-7b1d-11eb-1639-5d6b60931f40
-# ╠═f491c536-7ba3-11eb-0c50-cfd7718f63e1
-# ╠═dccd3e6a-7b30-11eb-0064-bbbe89fd7b20
-# ╠═bd974756-1025-410f-bb14-e428cbbc9586
-# ╠═e0b559fb-6158-45ca-932f-e099eff694e2
+# ╟─f491c536-7ba3-11eb-0c50-cfd7718f63e1
+# ╟─dccd3e6a-7b30-11eb-0064-bbbe89fd7b20
 # ╠═120b4a66-7b1f-11eb-3b6a-ad33435c800a
-# ╠═cc7fbb06-1dda-4e40-9813-db6c79226583
+# ╟─cc7fbb06-1dda-4e40-9813-db6c79226583
 # ╠═55b3beaa-7b2f-11eb-0518-a5667d4747b7
 # ╠═930d1f04-4734-4da5-ad84-52413e2198ac
 # ╟─3ba087f6-9168-11eb-27b7-93a70a2104e9
 # ╟─7cd85bbe-9130-11eb-3d5e-07187c2dcfcf
 # ╟─3709c856-9172-11eb-0c8c-dd693faaac37
-# ╠═563d910a-9139-11eb-1215-89384f244a32
-# ╠═02557d70-e152-48a2-a998-7530107ff334
+# ╟─563d910a-9139-11eb-1215-89384f244a32
 # ╠═a1d5dfc9-b9bf-4e61-9124-ed1e9311c1a7
 # ╟─bd5fa046-9164-11eb-29be-f322fc51efbb
 # ╠═c9a8e04e-9162-11eb-3775-951d2f9e3933

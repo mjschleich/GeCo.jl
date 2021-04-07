@@ -28,11 +28,7 @@ function generateClassifierFunction(features, thresholds)
                     end
                 end
                 if failed_conditions > 0
-<<<<<<< HEAD:scripts/sec6.x-ground-truth/experiments_ground_truth.jl
-                    score[i] = max(0, 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions)/2 / length($features))
-=======
                     score[i] = 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions) / length($features)
->>>>>>> main:scripts/sec6.4-mircobench/experiments_ground_truth.jl
                 else
                     score[i] = 1
                 end
@@ -236,10 +232,6 @@ thresholds = thresholdGenerator(X, vars)
 ########
 
 symbols = [Tuple(vars[1:i]) for i in 1:length(vars)]
-<<<<<<< HEAD:scripts/sec6.x-ground-truth/experiments_ground_truth.jl
-syms = symbols[10]
-for norm_ratio in norms, num_samples in samples#, syms in symbols
-=======
 norms = [l1_norm]
 
 # for norm_ratio in norms, num_samples in samples, syms in symbols
@@ -254,7 +246,6 @@ norms = [l1_norm]
 #         suffix="_decreasing_domain_size"
 #         )
 # end
->>>>>>> main:scripts/sec6.4-mircobench/experiments_ground_truth.jl
 
 
 
@@ -262,37 +253,6 @@ norms = [l1_norm]
 # EXPERIMENT WITH INTERLEAVED ORDER WRT DOMAIN SIZE
 ########
 
-<<<<<<< HEAD:scripts/sec6.x-ground-truth/experiments_ground_truth.jl
-# interleaved_vars = [
-#     :MaxBillAmountOverLast6Months,
-#     :TotalOverdueCounts,
-#     :MostRecentBillAmount,
-#     :AgeGroup,
-#     :MaxPaymentAmountOverLast6Months,
-#     :HasHistoryOfOverduePayments
-#     :MostRecentPaymentAmount,
-#     :TotalMonthsOverdue,
-#     :EducationLevel,
-#     :MonthsWithZeroBalanceOverLast6Months,
-#     :MonthsWithLowSpendingOverLast6Months,
-#     :MonthsWithHighSpendingOverLast6Months,
-# ]
-
-# symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
-
-# for norm_ratio in norms, num_samples in samples , syms in symbols
-
-#     threshs = [thresholds[s] for s in syms]
-#     this_classifier = @ClassifierGenerator(syms, threshs)
-
-#     groundTruthExperiment(X, p, this_classifier, syms, threshs;
-#         norm_ratio=norm_ratio,
-#         max_samples_init=num_samples.samples_init,
-#         max_samples_mut=num_samples.samples_mut,
-#         suffix="_interleaved_domain_size"
-#         )
-# end
-=======
 interleaved_vars = [
     :MaxBillAmountOverLast6Months,
     :TotalOverdueCounts,
@@ -322,4 +282,3 @@ for norm_ratio in norms, num_samples in samples, syms in symbols
         suffix="interleaved_domain_size"
         )
 end
->>>>>>> main:scripts/sec6.4-mircobench/experiments_ground_truth.jl

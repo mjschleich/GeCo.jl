@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.21
+# v0.14.1
 
 using Markdown
 using InteractiveUtils
@@ -21,10 +21,10 @@ begin
 end;
 
 # ╔═╡ a7036948-7b1d-11eb-1639-5d6b60931f40
-using PlutoUI
-
-# ╔═╡ cbf94252-7bc6-11eb-0d4d-bd36d463f51f
-using DataFrames
+begin 
+	using PlutoUI
+	using DataFrames
+end
 
 # ╔═╡ f491c536-7ba3-11eb-0c50-cfd7718f63e1
 include("scripts/credit/credit_constraints_MACE.jl")
@@ -66,6 +66,12 @@ explanation,  = @time explain(orig_instance, X,p_user, classifier)
 md""" # The credit interactive setting experiment with user input values
 """
 
+# ╔═╡ bd974756-1025-410f-bb14-e428cbbc9586
+instance = deepcopy(orig_instance)
+
+# ╔═╡ e0b559fb-6158-45ca-932f-e099eff694e2
+instance.isMale = 0
+
 # ╔═╡ 120b4a66-7b1f-11eb-3b6a-ad33435c800a
 md"""
 * isMale： $(@bind isMale NumberField(1:100000; default=1))
@@ -87,8 +93,16 @@ md"""
 # ╔═╡ dccd3e6a-7b30-11eb-0064-bbbe89fd7b20
 user_input = [isMale, isMarried, AgeGroup, EducationLevel, MaxBillAmountOverLast6Months, MaxPaymentAmountOverLast6Months, MonthsWithZeroBalanceOverLast6Months, MonthsWithLowSpendingOverLast6Months, MonthsWithHighSpendingOverLast6Months, MostRecentBillAmount, MostRecentPaymentAmount, TotalOverdueCounts, TotalMonthsOverdue, HasHistoryOfOverduePayments];
 
+# ╔═╡ cc7fbb06-1dda-4e40-9813-db6c79226583
+for (fidx, feature) in enumerate(propertynames(instance))
+	instance[feature] = user_input[fidx]
+end
+
 # ╔═╡ 55b3beaa-7b2f-11eb-0518-a5667d4747b7
-user_explanations, goodness  = explain(user_input, X, p, classifier);
+user_explanations, goodness = explain(user_input, X, p, classifier);
+
+# ╔═╡ 930d1f04-4734-4da5-ad84-52413e2198ac
+goodness
 
 # ╔═╡ 3ba087f6-9168-11eb-27b7-93a70a2104e9
 if (goodness)
@@ -112,6 +126,28 @@ end;
 # ╔═╡ 3709c856-9172-11eb-0c8c-dd693faaac37
 md"""### None Interactive Display (keep for possible later use)
 """
+
+# ╔═╡ 02557d70-e152-48a2-a998-7530107ff334
+function localactions(counterfactuals::DataFrame, orig_instance; num_actions = 5)
+	features = propertynames(counterfactuals)[1:end-4]
+	out = ""
+    for idx in 1:min(num_actions, nrow(counterfactuals))
+        cf = counterfactuals[idx,:]
+        out *= "\\\n**COUNTERFACTUAL $(idx)**\\\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)\\\n"
+        for (fidx, feature) in enumerate(features)
+            if cf[feature] != orig_instance[fidx]
+                out*= "$feature : \t$(orig_instance[fidx])  => $(cf[feature])\\\n"
+            end
+        end
+    end
+    out
+end
+
+# ╔═╡ a1d5dfc9-b9bf-4e61-9124-ed1e9311c1a7
+begin
+	s = localactions(user_explanations, user_input)
+	Markdown.parse(s)
+end
 
 # ╔═╡ bd5fa046-9164-11eb-29be-f322fc51efbb
 md"""### TOP ACTIONS DISPLAY
@@ -178,7 +214,7 @@ md"""
 """
 
 # ╔═╡ 563d910a-9139-11eb-1215-89384f244a32
-@seeprints for idx in 1:min(K, nrow(user_explanations))
+@seeprints for idx in 1:min(K, nrows(user_explanations))
 	cf = user_explanations[idx,:]
 	println("\n------- COUNTERFACTUAL $idx\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)")
 	for (f_index, feature) in enumerate(String.(names(orig_instance)))
@@ -217,21 +253,26 @@ end
 # ╠═dc4a497c-7b19-11eb-2f9e-ed3c114f7761
 # ╠═9841f2fe-7b2b-11eb-3e2d-f315722ca81d
 # ╟─a7036948-7b1d-11eb-1639-5d6b60931f40
-# ╟─f491c536-7ba3-11eb-0c50-cfd7718f63e1
+# ╠═f491c536-7ba3-11eb-0c50-cfd7718f63e1
 # ╠═dccd3e6a-7b30-11eb-0064-bbbe89fd7b20
-# ╠═cbf94252-7bc6-11eb-0d4d-bd36d463f51f
-# ╟─120b4a66-7b1f-11eb-3b6a-ad33435c800a
+# ╠═bd974756-1025-410f-bb14-e428cbbc9586
+# ╠═e0b559fb-6158-45ca-932f-e099eff694e2
+# ╠═120b4a66-7b1f-11eb-3b6a-ad33435c800a
+# ╠═cc7fbb06-1dda-4e40-9813-db6c79226583
 # ╠═55b3beaa-7b2f-11eb-0518-a5667d4747b7
+# ╠═930d1f04-4734-4da5-ad84-52413e2198ac
 # ╟─3ba087f6-9168-11eb-27b7-93a70a2104e9
 # ╟─7cd85bbe-9130-11eb-3d5e-07187c2dcfcf
 # ╟─3709c856-9172-11eb-0c8c-dd693faaac37
-# ╟─563d910a-9139-11eb-1215-89384f244a32
-# ╠═bd5fa046-9164-11eb-29be-f322fc51efbb
-# ╟─c9a8e04e-9162-11eb-3775-951d2f9e3933
-# ╟─5f7dacec-915b-11eb-25d3-75cbcf652e5e
+# ╠═563d910a-9139-11eb-1215-89384f244a32
+# ╠═02557d70-e152-48a2-a998-7530107ff334
+# ╠═a1d5dfc9-b9bf-4e61-9124-ed1e9311c1a7
+# ╟─bd5fa046-9164-11eb-29be-f322fc51efbb
+# ╠═c9a8e04e-9162-11eb-3775-951d2f9e3933
+# ╠═5f7dacec-915b-11eb-25d3-75cbcf652e5e
 # ╟─479acc12-915c-11eb-1a4b-f588eb756b0d
 # ╟─075b9028-9161-11eb-0abb-d7f56278d55b
-# ╟─a70ab516-913b-11eb-2f4c-5b3e31e2d669
+# ╠═a70ab516-913b-11eb-2f4c-5b3e31e2d669
 # ╟─71bc086e-9164-11eb-255f-df25d4fc05a1
 # ╟─df6b33a8-9161-11eb-0e65-83fcc46a5f76
 # ╠═9a2c2dc0-9140-11eb-3b17-95341317c7c6

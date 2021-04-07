@@ -1,7 +1,7 @@
 using CSV, Statistics, DataFrames, MLJ, Serialization
 
 const loadData = false
-const learnModel = false
+const learnModel = true
 const path = "data/yelp"
 
 if loadData
@@ -10,8 +10,8 @@ if loadData
     serialize(path*"/train_data.bin", X)
     serialize(path*"/train_data_y.bin", y)
 else
-    X = deserialize(path*"/train_data.bin")
-    y = deserialize(path*"/train_data_y.bin")
+    X = deserialize(path*"/train_data_less_categ.bin")
+    y = deserialize(path*"/train_data_y_less_categ.bin")
 end
 
 if learnModel
@@ -35,7 +35,7 @@ if learnModel
     println("Accuracy train data: $(accuracy(mode.(yhat_train), y[train]))")
     println("Accuracy test data: $(accuracy(mode.(yhat_test), y[test]))")
 
-    serialize(path*"/prf_classifier.bin",  classifier)
+    serialize(path*"/prf_classifier_less_cated.bin",  classifier)
 
 else
 
@@ -45,7 +45,7 @@ end
 
 orig_instance = X[536, :]
 
-partial_classifier = initPartialRandomForestEval(classifier, orig_instance, 1);
-full_classifier = initRandomForestEval(classifier, orig_instance, 1);
+# partial_classifier = initPartialRandomForestEval(classifier, orig_instance, 1);
+# full_classifier = initRandomForestEval(classifier, orig_instance, 1);
 
 include("yelp_constraints.jl")

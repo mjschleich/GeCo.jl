@@ -1,4 +1,5 @@
 using JLD, Plots, StatsPlots, NPZ, Statistics
+using Plots.PlotMeasures
 
 function plotDiceData()
     path = "scripts/results/dice_exp/"
@@ -13,9 +14,6 @@ function plotDiceData()
 
     default(guidefontsize=12, tickfontsize=12, legendfontsize=11)
 
-    times_plot = bar([1 2], [mean(gc_l1_dict["times"])*1000 mean(dice_array[1,:])*1000], xticks=(1:2, ["GeCo" "DiCE"]), yerr=[std(gc_dict["times"].*1000) std(dice_array[1,:].*1000)],  ylabel="milliseconds",  label="", framestyle = :box, palette=:lighttest) ## palette = :tab10
-    savefig(times_plot, "scripts/plots/dice_exp_times")
-
     dist_plot = bar([1 2],
         [mean(gc_l1_dict["dist"])  mean(dice_array[2,:])],
         xticks=(1:2, ["GeCo" "DiCE"]),
@@ -24,11 +22,12 @@ function plotDiceData()
         label="",
         framestyle = :box,
         palette=:tab10,
-        size=(300,200))
-    savefig(dist_plot, "scripts/plots/dice_exp_dist")
+        margin=0mm,
+        size=(400,300)
+        )
+    savefig(dist_plot, "scripts/plots/dice_exp/dice_exp_dist")
 
-    numfeat_plot = bar([1 2], [mean(gc_l1_dict["numfeat"])  mean(dice_array[3,:])], xticks=(1:2, ["GeCo" "DiCE"]), yerr=[std(gc_dict["numfeat"]) std(dice_array[3,:])],  ylabel="# features",  label="", framestyle = :box, palette=:lighttest) ## palette = :tab10
-    savefig(numfeat_plot, "scripts/plots/dice_exp_feat")
+    # numfeat_plot = bar([1 2], [mean(gc_l1_dict["numfeat"])  mean(dice_array[3,:])], xticks=(1:2, ["GeCo" "DiCE"]), yerr=[std(gc_dict["numfeat"]) std(dice_array[3,:])],  ylabel="# features",  label="", framestyle = :box, palette=:lighttest) ## palette = :tab10
 
     groups = [["GeCo" for _ in 1:5000]; ["xDiCE" for _ in 1:5000]; ]
     numfeat_plot = groupedhist(
@@ -40,11 +39,41 @@ function plotDiceData()
         bar_width=.7,
         bar_position = :doge,
         label=["GeCo" "DiCE"],
-        size=(300,200),
+        size=(500,200),
+        margin=0mm,
         palette=:tab10,
         framestyle = :box)
 
-    savefig(numfeat_plot, "scripts/plots/output/dice_exp_feat_hist")
+    savefig(numfeat_plot, "scripts/plots/dice_exp/dice_exp_feat_hist")
+
+
+    println("Geco Time: $(mean(gc_l1_dict["times"])*1000) Dice Time: $(mean(dice_array[1,:])*1000)")
+
+    times_plot = bar([1 2],
+        [mean(gc_l1_dict["times"]) mean(dice_array[1,:])],
+        xticks=(1:2, ["GeCo" "DiCE"]),
+        yerr=[std(gc_dict["times"]) std(dice_array[1,:])],
+        ylabel="seconds",
+        label="",
+        margin=0mm,
+        size=(400,300),
+        framestyle = :box,
+        palette=:tab10)
+
+    savefig(times_plot, "scripts/plots/dice_exp/dice_exp_times")
+
+    # times_plot = bar([1 2],
+    #     [mean(gc_l1_dict["times"])  mean(dice_array[1,:])],
+    #     xticks=(1:2, ["GeCo" "DiCE"]),
+    #     yerr=[std(gc_l1_dict["times"])  std(dice_array[1,:])],
+    #     ylabel="seconds",
+    #     framestyle=:box,
+    #     size=(300,200),
+    #     margin=0mm,
+    #     label="",
+    #     palette=:tab10)
+
+    # savefig(times_plot, "scripts/plots/dice_exp/dice_exp_times")
 
 end
 

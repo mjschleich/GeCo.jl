@@ -8,7 +8,7 @@ import Dates, JLD
 include("experiments_comparison_MACE.jl")
 include("experiments_comparison_WIT.jl")
 include("experiments_comparison_CERT.jl")
-include("experiments_comparison_SimBA.jl")
+include("experiments_comparison_SimCF.jl")
 
 for dataset in ["adult", "credit"]
     include("../$dataset/$(dataset)_setup_MACE.jl")
@@ -27,5 +27,5 @@ for dataset in ["adult", "credit"]
 
     Xcopy = DataFrame(X)
 
-    runExperimentSimba(Xcopy, p, 1, dataset)
+    runExperimentSimCF(Xcopy, p, 1, dataset)
 end

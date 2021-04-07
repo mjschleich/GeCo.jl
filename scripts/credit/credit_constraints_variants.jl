@@ -1,4 +1,4 @@
-p_all = initPLAF()
+p_all = PLAFProgram()
 
 @PLAF(p_all, :cf.isMale .== :x.isMale)
 @PLAF(p_all, :cf.isMarried .== :x.isMarried)
@@ -22,14 +22,14 @@ p_all = initPLAF()
 
 ### NO IMPLICATIONS
 
-p_no_imp = initPLAF(p_all)
+p_no_imp = PLAFProgram(p_all)
 empty!(p_no_imp.implications)
 
 
 
 ### NO INCREASING
 
-p_no_increasing = initPLAF()
+p_no_increasing = PLAFProgram()
 
 @PLAF(p_no_increasing, :cf.isMale .== :x.isMale)
 @PLAF(p_no_increasing, :cf.isMarried .== :x.isMarried)
@@ -37,7 +37,7 @@ p_no_increasing = initPLAF()
 
 ### COLLECTIONS
 
-constraint_variatations = [PLAFProgram(), p_all, p_no_imp, p_no_increasing]
+constraint_variations = [PLAFProgram(), p_all, p_no_imp, p_no_increasing]
 constraint_descriptions = ["p_empty", "p_all", "p_no_imp", "p_no_increasing"]
 
 

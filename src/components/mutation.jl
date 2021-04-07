@@ -8,10 +8,12 @@ function mutation!(population::DataFrame, feasible_space::FeasibleSpace; max_num
     groups::Vector{FeatureGroup} = feasible_space.groups
     sample_space::Vector{DataFrame} = feasible_space.feasibleSpace
 
+    estcfs = population.estcf::BitVector
+
     row = 1
-    while row < nrow(population) && population[row, :estcf]
+    while row < nrow(population) && estcfs[row]
         entity = population[row,:]
-        modified_features::BitVector = entity.mod
+        modified_features::BitVector = entity.mod::BitVector
 
         # The three lines below are to avoid deepcopies and pushing to DataFrames
         num_rows = length(groups) * max_num_samples
@@ -33,7 +35,9 @@ function mutation!(population::DataFrame, feasible_space::FeasibleSpace; max_num
             (isempty(df) || any(modified_features[group.indexes])) && continue;
 
             num_samples = min(max_num_samples, nrow(df))
-            sampled_rows = StatsBase.sample(1:nrow(df), StatsBase.FrequencyWeights(df.count), num_samples; replace=false, ordered=true)
+
+            weights::Vector{Int64} = df.count
+            sampled_rows = StatsBase.sample(1:nrow(df), StatsBase.FrequencyWeights(weights), num_samples; replace=false, ordered=true)
 
 
             ## TODO: Test performance of for loop vs columnar approach
@@ -84,7 +88,9 @@ function mutation!(manager::DataManager, feasible_space::FeasibleSpace; max_num_
                 (isempty(df) || any(mod[group.indexes])) && continue;
 
                 num_samples = min(max_num_samples, nrow(df))
-                sampled_rows = StatsBase.sample(1:nrow(df), StatsBase.FrequencyWeights(df.count), num_samples; replace=false, ordered=true)
+
+                weights::Vector{Int64} = df.count
+                sampled_rows = StatsBase.sample(1:nrow(df), StatsBase.FrequencyWeights(weights), num_samples; replace=false, ordered=true)
 
                 refined_modified_features = mod .| group.indexes
 

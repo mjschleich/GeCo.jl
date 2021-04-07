@@ -40,7 +40,7 @@ function runExperimentConstraintEffect(X::DataFrame, programs::Vector{PLAFProgra
         end
 
         num_explained = 0
-        num_to_explain = 5000
+        num_to_explain = 500
 
         empty!(num_changed)
         empty!(feat_changed)
@@ -63,6 +63,8 @@ function runExperimentConstraintEffect(X::DataFrame, programs::Vector{PLAFProgra
                         domains=domains,
                         desired_class=desired_class,
                         verbose=false,
+			min_num_generations=5,
+			max_num_generations=5,
                         norm_ratio=nratio,
                         compress_data=compress)
 
@@ -105,10 +107,15 @@ function runExperimentConstraintEffect(X::DataFrame, programs::Vector{PLAFProgra
     end
 end
 
-for dataset in ["adult"] # ["adult", "credit", "yelp"]
+for dataset in ["adult", "credit"]          # ["adult", "credit", "yelp"]
 
-    include("../$(dataset)/$(dataset)_setup_MACE.jl")
+    if dataset ∈ ["adult", "credit"]
+        include("../$(dataset)/$(dataset)_setup_MACE.jl")
+    elseif dataset == "yelp"
+        include("../$(dataset)/$(dataset)_setup_PRF.jl")
+    end
+
     include("../$(dataset)/$(dataset)_constraints_variants.jl")
 
-    runExperimentConstraintEffect(X, constraint_variatations, constraint_descriptions, dataset)
+    runExperimentConstraintEffect(X, constraint_variations, constraint_descriptions, dataset)
 end

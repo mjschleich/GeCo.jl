@@ -113,7 +113,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
     ablation::Bool=false,
     run_crossover::Bool=true,
     run_mutation::Bool=true,
-    size_distance_temp::Int64=nrow(data)*4,
+    size_distance_temp::Int64=100_000,
     verbose::Bool=false
     )
 
@@ -176,7 +176,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
-        while generation < min_num_generations || !converged && !population.outc[1] && generation < max_num_generations
+        while generation < min_num_generations || !converged && generation < max_num_generations
 
             crossover!(population, orig_instance, feasible_space)
 
@@ -189,6 +189,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             converged = selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
                 norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
 
+            # converged &= population.outc[1]
             generation += 1
         end
     else

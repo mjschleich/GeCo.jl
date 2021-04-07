@@ -28,7 +28,11 @@ function generateClassifierFunction(features, thresholds)
                     end
                 end
                 if failed_conditions > 0
+<<<<<<< HEAD:scripts/sec6.x-ground-truth/experiments_ground_truth.jl
                     score[i] = max(0, 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions)/2 / length($features))
+=======
+                    score[i] = 0.5 - (0.5 * distance_sum + 0.5 * failed_conditions) / length($features)
+>>>>>>> main:scripts/sec6.4-mircobench/experiments_ground_truth.jl
                 else
                     score[i] = 1
                 end
@@ -45,13 +49,11 @@ function thresholdGenerator(X, symbols)
     threshs = Dict{Symbol,Float64,}()
 
     for symbol in symbols
-        println(symbol)
-
         thresh = 0
         freq = 0
         space = combine(groupby(X, symbol; sort=true), nrow => :count)
 
-        low = max(1,Int(floor(0.3 * nrow(space))))
+        low = max(2,Int(floor(0.3*nrow(space))))
         high = min(nrow(space),Int(ceil(0.7 * nrow(space))))
 
         for row_index in low:high
@@ -91,7 +93,6 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
     times = Array{Float64,1}()
 
     predictions = classifier(X)
-
 
     for i in 1:nrow(X)
 
@@ -158,6 +159,8 @@ function groundTruthExperiment(X, p, classifier, symbols, thresholds;
         push!(times, time)
     end
 
+    println(explained)
+
     ratio =
         if norm_ratio == [0.0,1.0,0.0,0.0]
         "l1_norm"
@@ -200,7 +203,6 @@ p = initPLAF()
 @PLAF(p, :cf.isMale .== :x.isMale)
 @PLAF(p, :cf.isMarried .== :x.isMarried)
 
-
 vars = [
     :MaxBillAmountOverLast6Months,
     :MostRecentBillAmount,
@@ -222,8 +224,9 @@ norms = [l1_norm, l0_l1_norm]
 
 samples1 = (samples_mut = 5, samples_init = 20)
 samples2 = (samples_mut = 15, samples_init = 60)
-# samples3 = (samples_mut = 100, samples_init = 300)
-samples = [samples1] # [samples1, samples2]
+samples3 = (samples_mut = 25, samples_init = 100)
+#samples3 = (samples_mut = 100, samples_init = 300)
+samples = [samples1, samples2, samples3]
 
 thresholds = thresholdGenerator(X, vars)
 # thresholds = Dict(:MostRecentBillAmount => 4020.0, :MaxBillAmountOverLast6Months => 4320.0, :AgeGroup => 2.0, :TotalMonthsOverdue => 12.0, :MaxPaymentAmountOverLast6Months => 3050.0, :MostRecentPaymentAmount => 1220.0)
@@ -233,24 +236,33 @@ thresholds = thresholdGenerator(X, vars)
 ########
 
 symbols = [Tuple(vars[1:i]) for i in 1:length(vars)]
+<<<<<<< HEAD:scripts/sec6.x-ground-truth/experiments_ground_truth.jl
 syms = symbols[10]
 for norm_ratio in norms, num_samples in samples#, syms in symbols
+=======
+norms = [l1_norm]
 
-    threshs = [thresholds[s] for s in syms]
-    this_classifier = @ClassifierGenerator(syms, threshs)
+# for norm_ratio in norms, num_samples in samples, syms in symbols
 
-    groundTruthExperiment(X, p, this_classifier, syms, threshs;
-        norm_ratio=norm_ratio,
-        max_samples_init=num_samples.samples_init,
-        max_samples_mut=num_samples.samples_mut,
-        suffix="_decreasing_domain_size"
-        )
-end
+#     threshs = [thresholds[s] for s in syms]
+#     this_classifier = @ClassifierGenerator(syms, threshs)
+
+#     groundTruthExperiment(X, p, this_classifier, syms, threshs;
+#         norm_ratio=norm_ratio,
+#         max_samples_init=num_samples.samples_init,
+#         max_samples_mut=num_samples.samples_mut,
+#         suffix="_decreasing_domain_size"
+#         )
+# end
+>>>>>>> main:scripts/sec6.4-mircobench/experiments_ground_truth.jl
+
+
 
 ########
 # EXPERIMENT WITH INTERLEAVED ORDER WRT DOMAIN SIZE
 ########
 
+<<<<<<< HEAD:scripts/sec6.x-ground-truth/experiments_ground_truth.jl
 # interleaved_vars = [
 #     :MaxBillAmountOverLast6Months,
 #     :TotalOverdueCounts,
@@ -280,3 +292,34 @@ end
 #         suffix="_interleaved_domain_size"
 #         )
 # end
+=======
+interleaved_vars = [
+    :MaxBillAmountOverLast6Months,
+    :TotalOverdueCounts,
+    :MostRecentBillAmount,
+    :AgeGroup,
+    :MaxPaymentAmountOverLast6Months,
+    :HasHistoryOfOverduePayments,
+    :MostRecentPaymentAmount,
+    :TotalMonthsOverdue,
+    :EducationLevel,
+    :MonthsWithZeroBalanceOverLast6Months,
+    :MonthsWithLowSpendingOverLast6Months,
+    :MonthsWithHighSpendingOverLast6Months,
+]
+
+symbols = [Tuple(interleaved_vars[1:i]) for i in 1:length(interleaved_vars)]
+
+for norm_ratio in norms, num_samples in samples, syms in symbols
+
+    threshs = [thresholds[s] for s in syms]
+    this_classifier = @ClassifierGenerator(syms, threshs)
+
+    groundTruthExperiment(X, p, this_classifier, syms, threshs;
+        norm_ratio=norm_ratio,
+        max_samples_init=num_samples.samples_init,
+        max_samples_mut=num_samples.samples_mut,
+        suffix="interleaved_domain_size"
+        )
+end
+>>>>>>> main:scripts/sec6.4-mircobench/experiments_ground_truth.jl

@@ -3,22 +3,22 @@ using Pkg; Pkg.activate(".")
 using GeCo,Printf, DataFrames
 import Dates, JLD, PyCall
 
-function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, dataset_name::String, model::String, desired_class::Int64)
+function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, dataset_name::String, model::String, desired_class::Int64, allgens::Bool)
 
     if isfile("data/$dataset_name/domains.jld")
         println("Loading domains from file: data/$dataset_name/domains.jld ($(Dates.now()))")
-        d = JLD.load("data/$dataset_name/domains.jld")
+        d = JLD.load("data/$dataset_name/domains_less_categ.jld")
         domains = d["domains"]
     else
         println("Initializing Domains: ($(Dates.now()))")
         domains = initDomains(p, X)
 
         println("Saving Domains: ($(Dates.now()))")
-        JLD.save("data/$dataset_name/domains.jld", "domains", domains)
+        JLD.save("data/$dataset_name/domains_test.jld", "domains", domains)
     end
 
     println("Computing Predictions: ($(Dates.now()))")
-    predictions = if classifier isa PyCall.PyObject
+    predictions = @time if classifier isa PyCall.PyObject
             mode.(ScikitLearn.predict(classifier, MLJ.matrix(X)))
         else
             MLJ.predict_mode(classifier, X)
@@ -29,7 +29,7 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
     # println("Total number of predictions: $(length(predictions)) \n",
     #     "Total number of positive predictions $(sum(predictions))")
 
-    num_to_explain = 1000
+    num_to_explain = 100
 
     num_changed = Array{Int64,1}(undef, num_to_explain)
     feat_changed = Array{BitArray{1},1}(undef, num_to_explain)
@@ -45,11 +45,19 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
     mutation_time = Array{Float64,1}(undef, num_to_explain)
     crossover_time = Array{Float64,1}(undef, num_to_explain)
 
-    for partial in [false, true], compress in [true, false], mutation_run in [true, false], crossover_run in [true, false]
+    if allgens
+       min_gens = 3
+       max_gens = 15
+    else
+	min_gens = 5
+	max_gens = 5
+    end
+
+    for partial in [false], compress in [false,true], mutation_run in [true], crossover_run in [true]
 
         (!mutation_run && !crossover_run) && continue
 
-        println("partial: $partial mutation_run: $mutation_run crossover_run $crossover_run compress_data: $compress ($(Dates.now()))")
+        println("partial: $partial mutation_run: $mutation_run crossover_run $crossover_run compress_data: $compress allgens: $allgens ($(Dates.now()))")
 
         num_explained = 0
         changed_feats = falses(size(X,2))
@@ -72,8 +80,8 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
         explain(X[first_neg, :], X, p, clf;
             desired_class=desired_class,
             compress_data=compress,
-            min_num_generations=5,
-            max_num_generations=5,
+            min_num_generations=3,
+            max_num_generations=3,
             convergence_k=3,
             ablation=true,
             run_crossover=crossover_run,
@@ -104,8 +112,8 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
                     explain(orig_instance, X, p, clf;
                         desired_class=desired_class,
                         compress_data=compress,
-                        min_num_generations=5,
-                        max_num_generations=5,
+                        min_num_generations=min_gens,
+                        max_num_generations=max_gens,
                         convergence_k=3,
                         ablation=true,
                         run_crossover=crossover_run,
@@ -140,7 +148,14 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
         end
 
         model_name = (partial ?  "$(model)_partial_model" : "$(model)_mlj_model")
-        file = "scripts/results/ablation_exp/geco_ablation_experiments_$(dataset_name)_$(model_name)_compress_$(compress)_mutation_$(mutation_run)_crossover_$(crossover_run).jld"
+
+	if allgens
+	   suffix = "_allgens"
+	else
+	   suffix = ""
+	end
+
+	file = "scripts/results/ablation_exp/geco_ablation_experiments_$(dataset_name)_$(model_name)_compress_$(compress)_mutation_$(mutation_run)_crossover_$(crossover_run)_less_categ_small$(suffix).jld"
         JLD.save(file,
             "times", times,
             "dist", distances,
@@ -170,10 +185,10 @@ function runBreakdownExperiment(X::DataFrame, p::PLAFProgram, classifier, datase
 end
 
 
-for dataset in ["allstate", "yelp"]
-    for model in ["PRF", "MLP"]
+for dataset in ["yelp"], allgens in [true]
+    for model in ["PRF"]  # ["MLP"]
 
         include("../$(dataset)/$(dataset)_setup_$(model).jl")
-        runBreakdownExperiment(X, p, classifier, dataset, model, 1)
+        runBreakdownExperiment(X, p, classifier, dataset, model, 1, allgens)
     end
 end

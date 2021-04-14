@@ -1,9 +1,9 @@
 
 using Printf
 
-include("../../competitors/SimBA.jl")
+include("../../competitors/SimCF.jl")
 
-function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, dataset_name::String)
+function runExperimentSimCF(X::DataFrame, p::PLAFProgram, desired_class::Int64, dataset_name::String)
     feasible_space = feasibleSpace(X, orig_instance, p)
 
     desired_outc = Array{Bool,1}()
@@ -31,7 +31,7 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
 
             orig_instance = X[i, :]
             time = @elapsed closest_entity, correct_outcome =
-                simBA(orig_instance, X, p, classifier, 5, desired_class)
+                simCF(orig_instance, X, p, classifier, 5, desired_class)
 
             changed = BitVector([orig_instance[feature] != closest_entity[feature] for feature in  propertynames(orig_instance)])
 
@@ -51,7 +51,7 @@ function runExperimentSimba(X::DataFrame, p::PLAFProgram, desired_class::Int64, 
     end
 
 
-    file = "scripts/results/simba_exp/$(dataset_name)_simba_experiment.jld"
+    file = "scripts/results/simcf_exp/$(dataset_name)_simcf_experiment.jld"
 
     JLD.save(file,
         "times", times,

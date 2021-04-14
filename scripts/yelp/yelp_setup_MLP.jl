@@ -1,9 +1,9 @@
-using CSV, Statistics, DataFrames, MLJ, ScikitLearn, Serialization
+using CSV, Statistics, DataFrames, MLJ, ScikitLearn, Serialization, Dates
 
 
-const loadData = true
+const loadData = false
 const learnModel = false
-const layers = (100,100)
+const layers = (10,10)
 
 const path = "data/yelp"
 
@@ -13,8 +13,8 @@ if loadData
     serialize(path*"/train_data.bin", X)
     serialize(path*"/train_data_y.bin", y)
 else
-    X = deserialize(path*"/train_data.bin")
-    y = deserialize(path*"/train_data_y.bin")
+    X = deserialize(path*"/train_data_less_categ.bin")
+    y = deserialize(path*"/train_data_y_less_categ.bin")
 end
 
 # load the model
@@ -26,7 +26,9 @@ if learnModel
     # split the dataset
     train, test = partition(eachindex(y), 0.7, shuffle=true)
 
-    for layer_sizes in [(10,10), (100,), (100,10), (100,100), (200,), (200,10), (200,100), (100,100,10)]
+    classifier = MLPClassifier()
+    
+    for layer_sizes in [(10,10), (100,100)] #, (100,10), (100,100), (200,), (200,10), (200,100), (100,100,10)]
 
         println("Yelp: Layer Sizes: $(layer_sizes) -- ($(Dates.now()))")
         classifier=MLPClassifier(hidden_layer_sizes=layer_sizes)
@@ -52,7 +54,8 @@ if learnModel
     # partial_classifier = initMLPEval(classifier,orig_instance)
 else
     println("Loading MLP model")
-    classifier = deserialize(path*"/mlp_classifier_$(layers).bin")
+    #classifier = deserialize(path*"/mlp_classifier_$(layers).bin")
+    classifier = deserialize(path*"/mlp_classifier_$(layers)_less_categ.bin")
 end
 
 include("yelp_constraints.jl");

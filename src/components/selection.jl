@@ -47,16 +47,18 @@ function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow,
     max_num_entity = maximum(nrow(entities) for entities in values(manager.dict))
 
     for (mod, entities) in manager.dict
+        # println(" -- ")
         pred::Vector{Float64} = predict(classifier, entities, mod)
 
-        dist = distance(entities, orig_instance, feasible_space.num_features, feasible_space.ranges;
+        dist::Vector{Float64} = distance(entities, orig_instance, feasible_space.num_features, feasible_space.ranges;
             distance_temp=distance_temp, norm_ratio=norm_ratio)
 
-        entities.outc = pred .> 0.5
-        entities.score = dist + map(predp -> !predp[2] ? 2.0 - predp[1] : 0.0, zip(pred, entities.outc))
+        outc::BitVector = pred .> 0.5
+        entities.outc = outc
+        entities.score = dist + map(predp -> predp[2] * ( 2.0 - predp[1] ), zip(pred, outc))
 
         # dist + !p ? 2.0 - pred : 0.0
-        append!(scores, zip(entities.score, entities.estcf))
+        append!(scores, zip(entities.score::Vector{Float64}, entities.estcf::Vector{Bool}))
     end
 
     sort!(scores, by=first)
@@ -68,7 +70,7 @@ function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow,
         # We keep the top-k counterfactuals
         for mod in keyList
             entities = manager.dict[mod]
-            keeps = entities.score .<= scores[k][1]
+            keeps::BitVector = entities.score .<= scores[k][1]
             select!(manager, mod, keeps)
 
             if isempty(manager.dict[mod])

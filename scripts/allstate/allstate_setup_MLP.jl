@@ -25,6 +25,7 @@ if learnModel
 
     # split the dataset
     train, test = partition(eachindex(y), 0.7, shuffle=true)
+    classifier=MLPClassifier()
 
     for layer_sizes in [(10,10), (100,), (100,10), (100,100), (200,), (200,10), (200,100)]
 

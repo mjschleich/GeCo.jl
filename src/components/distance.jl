@@ -2,7 +2,7 @@
 
 @inline absolute(val, orig_val, range)::Float64 = abs(val - orig_val) / range
 
-function distance(df::DataFrame, orig_instance::DataFrameRow, num_features::Int64, featureRanges::Dict{Symbol, Float64};
+function distance(df::DataFrame, orig_instance::DataFrameRow, num_features::Int64, featureRanges::Dict{Symbol, Float64}; #, norm_ratio::Array{Float64,1}, distance_temp::Array{Float64,1})
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     distance_temp::Array{Float64,1}=zeros(Float64, 4*nrow(df)))::Array{Float64,1}
 
@@ -21,15 +21,19 @@ function distance(df::DataFrame, orig_instance::DataFrameRow, num_features::Int6
         # ad hoc hack
         feature in (:generation, :score, :outc, :mod, :estcf, :count, :distance) && continue
 
+
         if elscitype(col) != Multiclass     # Feature is not categorical
 
+            data::Vector{Float64} = col
             orig_val::Float64 = orig_instance[feature]
             range = featureRanges[feature]
 
+            # println(feature, elscitype(col), range, norm_ratio)
+
             row_index = 0
-            for val in col
+            for val in data
                 # if numerical, get the absolute difference and then divided by the range of the feature
-                diff = abs(val - orig_val) / range ## absolute(val, orig_val, range)
+                diff::Float64 = abs(val - orig_val) / range ## absolute(val, orig_val, range)
 
                 distance_temp[row_index + 1] += (diff != 0.0)                 ## zero norm
                 distance_temp[row_index + 2] += diff                          ## one norm

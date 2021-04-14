@@ -2,7 +2,7 @@ module GeCo
 
 export explain, actions, featureList, initializeFeatures, testExplanations
 
-using DataFrames, Statistics, PyCall
+using DataFrames, Statistics, PyCall, Markdown
 import ScikitLearn, JSON, StatsBase, MLJ
 
 const default_norm_ratio = [0.25, 0.25, 0.25, 0.25]
@@ -80,7 +80,7 @@ function explain(orig_array::Array{Float64,1}, data::DataFrame, program::PLAFPro
     verbose::Bool=false
     )
     push!(data, orig_array)
-    
+
     orig_instance = data[size(data)[1], :]
     orig_frame = DataFrame(orig_instance)
     insertcols!(orig_frame,
@@ -112,7 +112,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
     ablation::Bool=false,
     run_crossover::Bool=true,
     run_mutation::Bool=true,
-    size_distance_temp::Int64=nrow(data)*4,
+    size_distance_temp::Int64=100_000,
     verbose::Bool=false
     )
 
@@ -175,7 +175,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             norm_ratio=norm_ratio,
             distance_temp=distance_temp)
 
-        while generation < min_num_generations || !converged && !population.outc[1] && generation < max_num_generations
+        while generation < min_num_generations || !converged && generation < max_num_generations
 
             crossover!(population, orig_instance, feasible_space)
 
@@ -188,6 +188,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             converged = selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
                 norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
 
+            # converged &= population.outc[1]
             generation += 1
         end
     else
@@ -256,36 +257,28 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
 end
 
 
-function actions(counterfactuals::DataFrame, orig_instance; num_actions = 5)
+function actions(counterfactuals::DataFrame, orig_instance::DataFrameRow;
+    num_actions::Int64=5, print::Bool=true)
+    out = ""
     for idx in 1:min(num_actions, nrow(counterfactuals))
         cf = counterfactuals[idx,:]
-        println("\n------- COUNTERFACTUAL $idx\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)")
+        out *= "\\\n**COUNTERFACTUAL $(idx)**\\\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)\\\n"
         for feature in propertynames(orig_instance)
-            delta = cf[feature] - orig_instance[feature]
-            if delta != 0
-                println(feature, " : \t",orig_instance[feature], " => ", cf[feature])
+            if cf[feature] != orig_instance[feature]
+                out*= "$feature : \t$(orig_instance[feature]) \$\\to\$ $(cf[feature])\\\n"
             end
         end
     end
+    print && println(Markdown.parse(out))
+    out
 end
 
 
 function actions(counterfactuals::DataManager, orig_instance; num_actions = 5)
-
     # Turn DataManager into a DataFrame
     df = materialize(counterfactuals)
-    sort!(df, :score)
-
-    for idx in 1:min(num_actions, nrow(df))
-        cf = df[idx,:]
-        println("\n------- COUNTERFACTUAL $idx\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)")
-        for feature in String.(names(orig_instance))
-            delta = cf[feature] - orig_instance[feature]
-            if delta != 0
-                println(feature, " : \t",orig_instance[feature], " => ", cf[feature])
-            end
-        end
-    end
+    DataFrame.sort!(df, :score)
+    actions(df, orig_instance; num_actions = num_actions)
 end
 
 

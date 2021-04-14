@@ -104,7 +104,7 @@ end
     grouped_entities = groupby(population, :mod)
     num_feat = size(population, 2) - NUM_EXTRA_COL
     insertcols!(population, :pred => 0.)
-    insertcols!(population, :orig_ref => 1:nrows(population))
+    insertcols!(population, :orig_ref => 1:nrow(population))
     # lazy update
     # template_feats = collect(Float64, orig_instance[1:num_feat])
     template_feats = copy(orig_instance)

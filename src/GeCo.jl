@@ -95,7 +95,6 @@ function explain(orig_array::Array{Float64,1}, data::DataFrame, program::PLAFPro
     end
     explains, = explain(orig_instance, data, program, classifier)
     return explains, false
-
 end
 
 function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProgram, classifier;

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.2
+# v0.12.21
 
 using Markdown
 using InteractiveUtils
@@ -17,10 +17,12 @@ end
 begin
 	using GeCo
 	
-	using PlutoUI, PyPlot
+	using PlutoUI, PyPlot, DataFrames, Plots, MLJ
 	PyPlot.svg(true);
 
-	include("notebook/geco_demo_credit_setup.jl");
+	plotly()
+
+	include("notebook/geco_rf_credit_setup.jl");
 	
 	md"""Setup completed"""
 end
@@ -95,11 +97,9 @@ begin
 	for (fidx, feature) in enumerate(propertynames(instance))
 		instance[feature] = user_input[fidx]
 	end
-	
-	pred = classifier.predict([user_input])[1]
-	goodness = (pred == 1)
-	
-	println(pred)
+	pred = broadcast(MLJ.pdf, MLJ.predict(classifier, DataFrame(instance)),1)[1];
+	#pred = classifier.predict([user_input])[1]
+	goodness = (pred >= 0.5)
 	
 	if goodness
 		md"Attention! The input instance is already classified as desired!"
@@ -192,7 +192,7 @@ begin
 			end
 		end
 		return weights, counts, cum_change, pos_counts, neg_counts, pos_cum_change, neg_cum_change
-	end;
+	end
 
 	weights, counts, cum_change, pos_counts, neg_counts, pos_cum_change, neg_cum_change = generate_explantions(instances, X, classifier, plaf_prog, 5);
 	
@@ -279,11 +279,12 @@ let
 	PyPlot.bar(a, ave_change) 
 	PyPlot.matplotlib.pyplot.xlabel("Feature")
 	PyPlot.matplotlib.pyplot.ylabel("Average Changed")
-	PyPlot.matplotlib.pyplot.title("Average Changed For Each Feature")
+	PyPlot.matplotlib.pyplot.title("Absolute Average Changed For Each Feature")
 	
 	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
 	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
 	figure=PyPlot.gcf()
+
 end
 
 # ╔═╡ 80f49634-9d2b-11eb-359c-032422eaa82a
@@ -331,19 +332,17 @@ function get_feature_text()
 	feature_text = ""
 	namesX = names(instance)
 	for i in 1:length(namesX)
-		feature_text *= "$(i) : $(namesX[i]) \n"
+		feature_text *= "$(i) : $(namesX[i]) \\\n "
 	end
-	return feature_text
-end
+	return Markdown.parse(feature_text)
+end;
 
+
+# ╔═╡ 512d2d9a-a1a8-11eb-36dd-df807afdc1da
+ get_feature_text()
 
 # ╔═╡ 1ef1a4ca-9d37-11eb-3b9f-7d5e93a9bef0
 feature_text = get_feature_text()
-
-# ╔═╡ 9841f2fe-7b2b-11eb-3e2d-f315722ca81d
-
-md""" # The credit interactive setting experiment with user input values
-"""
 
 # ╔═╡ 479acc12-915c-11eb-1a4b-f588eb756b0d
 function feature_to_index()
@@ -360,26 +359,63 @@ feature_dict = feature_to_index();
 # ╔═╡ a70ab516-913b-11eb-2f4c-5b3e31e2d669
 function get_group(user_explanations, k, ori_instance)
 	sort!(user_explanations, :score)
-	user_explanations = user_explanations[1:k,:]
+	# user_explanations = user_explanations[1:k,:]
 	dict::Dict{Int64, DataFrame} = Dict()
-	count = 0
+	group_index = 0
 	group_explanations = groupby(user_explanations, :mod)
 	for group in group_explanations
 		explanations_g = group[:,1:14]
-		
+		explanations_g = explanations_g[:, filter(x -> x = true, group[1, :mod])]
 		
 		# we should filter out the rows that is dominate by others
-		row_num = 2
+		row_num = 1
 		while row_num <= nrow(explanations_g)
-			# check whether this row is a trivial one based on each of the previous rows
+			# check whether this row is a trivial one based on each of the previous rows and groups
 			cur_instance = explanations_g[row_num,:]
 			trivial = false
+			
+			# check for each of the previous groups
+			for prev_group_index in 0:group_index-1
+				
+				prev_group = dict[prev_group_index]
+				if !issubset(names(prev_group), names(explanations_g))
+					
+					continue
+				end
+				
+				for prev_group_row in 1:nrow(prev_group)
+					
+					prev_i = prev_group[prev_group_row,:]
+					check = 0
+					for feature_index in names(prev_group)
+						if !(ori_instance[feature_index] < prev_i[feature_index] 
+							<= cur_instance[feature_index] ||  
+							ori_instance[feature_index] > prev_i[feature_index] >= 
+							cur_instance[feature_index])
+							break
+						end
+						check += 1
+					end
+					if check == length(names(prev_group))
+						trivial = true
+						break
+					end
+				end
+				if trivial
+					break
+				end
+			end
+			if trivial
+				deleterows!(explanations_g, row_num)
+				continue
+			end
+	
+			# check for each of the previous rows
 			for prev_row in 1:row_num-1
 				prev_instance = explanations_g[prev_row,:]
 				check = 0
-				for feature_index in 1:14
-					if group[1, :mod][feature_index] == true && 
-						!(ori_instance[feature_index] < prev_instance[feature_index] 
+				for feature_index in names(explanations_g)
+					if !(ori_instance[feature_index] < prev_instance[feature_index] 
 						<= cur_instance[feature_index] ||  
 						ori_instance[feature_index] > prev_instance[feature_index] >= 
 						cur_instance[feature_index])
@@ -387,8 +423,9 @@ function get_group(user_explanations, k, ori_instance)
 					end
 					check += 1
 				end
-				if check == 14
+				if check == length(names(explanations_g))
 					trivial = true
+					break
 				end
 			end
 			if trivial
@@ -397,10 +434,16 @@ function get_group(user_explanations, k, ori_instance)
 			end
 			row_num += 1
 		end
-		explanations_g = explanations_g[:, filter(x -> x = true, group[1, :mod])]
+		if (row_num == 1)
+			continue
+		end
 		unique!(explanations_g)
-		dict[count] = explanations_g
-		count += 1
+	
+		dict[group_index] = explanations_g
+		group_index += 1
+		if group_index >= k
+			break
+		end
 	end
 	return dict
 end;
@@ -425,27 +468,20 @@ function generate_group_action(goodness, explanations, actions, user_input, K)
 		end
 	end
 	return out
-end
+end;
 
 # ╔═╡ d5beb41a-9d28-11eb-2f1f-69bcc72b2005
 Markdown.parse(
 	generate_group_action(false, explanations, actions, orig_instance, K_PLAF)
 )
 
-# ╔═╡ 71bc086e-9164-11eb-255f-df25d4fc05a1
-md"""### RESULT GROUP DISPLAY
-"""
-
-# ╔═╡ 676827ac-ec82-4e22-9171-92494c99e435
-begin
-	K = 10
-end
-
-# ╔═╡ c6c96fec-9d2e-11eb-1050-015257bb0640
+# ╔═╡ 4d0dcd7a-a1a1-11eb-305a-fb9789300d55
 let 
 	if  (!goodness)
-		groups = get_group(explanations, K, user_input)
-		f, axs = PyPlot.matplotlib.pyplot.subplots(1, length(groups), figsize=(25, 6))
+		plot_ret = nothing
+		count = 1
+		groups = get_group(explanations, K_PLAF, instance)
+
 		for index in 0:length(groups)-1
 			row_index = 1
 			group = groups[index]
@@ -453,7 +489,7 @@ let
 			xs = Array{String}(undef, nrow(group)*length(features))
 			ys = []
 			
-			for r_index in 1:nrow(group)
+			for r_index in 1:DataFrames.nrow(group)
 				cf = group[r_index,:]
 				for feature in features
 					xs[row_index] = string(feature_dict[feature])
@@ -469,19 +505,165 @@ let
 				append!(ori_ys, user_input[feature_dict[feature]])
 				row_index += 1
 			end
-			axs[index+1].scatter(xs, ys)
-			axs[index+1].scatter(ori_xs, ori_ys)
-			PyPlot.legend(["cf", "original"])
+			
+			p_cur = Plots.scatter(xs, ys, label = "cf")
+			scatter!(ori_xs, ori_ys, label = "ori")
+			if count == 1
+				plot_ret = p_cur 
+			elseif count == length(groups)
+				plot_ret = Plots.plot(plot_ret, p_cur, 
+					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
+			else
+				plot_ret = Plots.plot(plot_ret, p_cur, 
+					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
+			end
+			count += 1
+			
 		end
-		box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
-		PyPlot.text(length(names(groups[length(groups)-1]))-0.7, 0, feature_text, style="italic", fontsize=12, bbox = box_sty)
-		figure=PyPlot.gcf()		
+		plot_ret
+		
 	end
 end
 
+# ╔═╡ ce01f106-a19f-11eb-12e3-cd894166023d
+function get_space()
+	ranges = Dict(String(feature) => max(1.0, Float64(maximum(col)-minimum(col))) for (feature, col) in pairs(eachcol(X)))
+	maxs = Dict(String(feature) => Float64(maximum(col)) for (feature, col) in pairs(eachcol(X)))
+	mins = Dict(String(feature) => Float64(minimum(col)) for (feature, col) in pairs(eachcol(X)))
+	space = Dict("ranges" => ranges, "maxs" => maxs,"mins" => mins)
+	 space
+end;
+
+# ╔═╡ d33ade46-a1a7-11eb-0549-ffc4cb818354
+space = get_space();
+
+# ╔═╡ 71f98784-a1a4-11eb-2afd-b70324f6ade1
+let 
+	if  (!goodness)
+		plot_ret = nothing
+		count = 1
+		groups = get_group(explanations, K_PLAF, instance)
+
+		for index in 0:length(groups)-1
+			row_index = 1
+			group = groups[index]
+			features = String.(names(group))
+			xs = Array{String}(undef, nrow(group)*length(features))
+			ys = []
+			
+			for r_index in 1:DataFrames.nrow(group)
+				cf = group[r_index,:]
+				for feature in features
+					xs[row_index] = string(feature_dict[feature])
+					row_index += 1
+					append!(ys, (cf[feature]-space["mins"][feature]) / space["ranges"][feature])
+				end
+			end
+			ori_xs = Array{String}(undef,length(features))
+			ori_ys = []
+			row_index = 1
+			for feature in features
+				ori_xs[row_index] = string(feature_dict[feature])
+				append!(ori_ys, (user_input[feature_dict[feature]]-space["mins"][feature]) / space["ranges"][feature])
+				row_index += 1
+			end
+			
+			p_cur = Plots.scatter(xs, ys, label = "cf")
+			scatter!(ori_xs, ori_ys, label = "ori")
+			if count == 1
+				plot_ret = p_cur 
+			elseif count == length(groups)
+				plot_ret = Plots.plot(plot_ret, p_cur, 
+					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
+			else
+				plot_ret = Plots.plot(plot_ret, p_cur, 
+					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
+			end
+			count += 1
+			
+		end
+		plot_ret
+		
+	end
+end
+
+# ╔═╡ e99670d2-a1a8-11eb-3cbb-49366adb2667
+let 
+	namesX = names(instance)
+	fig = PyPlot.matplotlib.pyplot.figure(figsize=(10, 6), dpi=80)
+
+    PyPlot.clf() 
+    # PyPlot.bar(namesX, weights) 
+	ave_change = []
+	a = []
+	max = 0
+	text = ""
+	for i in 1:length(namesX)
+		if counts[i] == 0
+			append!(ave_change, 0)
+		else
+			val = cum_change[i]/counts[i]/ space["ranges"][namesX[i]]
+			if val > max
+				max = val
+			end
+			append!(ave_change, val)
+		end
+		text *= "$(i) : $(namesX[i]) \n"
+		append!(a, i)
+	end
+	PyPlot.bar(a, ave_change) 
+	PyPlot.matplotlib.pyplot.xlabel("Feature")
+	PyPlot.matplotlib.pyplot.ylabel("Average Changed (respect to feature range)")
+	PyPlot.matplotlib.pyplot.title("Average Changed in Percentage (respect to feature range) For Each Feature")
+	
+	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
+	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
+	figure=PyPlot.gcf()
+
+end
+
+# ╔═╡ 95028f46-a1a9-11eb-276c-313e5d8bb515
+# pos_counts, neg_counts, pos_cum_change, neg_cum_change
+let 
+	namesX = names(instance)
+	fig = PyPlot.matplotlib.pyplot.figure(figsize=(10, 6), dpi=80)
+
+    PyPlot.clf() 
+    # PyPlot.bar(namesX, weights) 
+	pos_changes = []
+	neg_changes = []
+	a_1 = []
+	a_2 = []
+	text = ""
+	for i in 1:length(namesX)
+		if pos_counts[i] == 0
+			append!(pos_changes, 0)
+		else
+			append!(pos_changes, pos_cum_change[i]/pos_counts[i]/ space["ranges"][namesX[i]])
+		end
+		if neg_counts[i] == 0
+			append!(neg_changes, 0)
+		else
+			append!(neg_changes, neg_cum_change[i]/neg_counts[i]/ space["ranges"][namesX[i]])
+		end
+		text *= "$(i) : $(namesX[i]) \n"
+		append!(a_1, i-0.2)
+		append!(a_2, i+0.2)
+	end
+	width = 0.4
+	PyPlot.bar(a_1, pos_changes, width, color="cyan") 
+	PyPlot.bar(a_2, neg_changes, width, color="orange") 
+	PyPlot.matplotlib.pyplot.xlabel("Feature")
+	PyPlot.matplotlib.pyplot.ylabel("Average Changed in Percentage")
+	PyPlot.matplotlib.pyplot.title("Average Changed in Percentage (respect to feature range) For Each Feature")
+	PyPlot.legend(["Positive Change", "Negative Change"])
+	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
+	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
+	figure=PyPlot.gcf()
+end
 
 # ╔═╡ Cell order:
-# ╟─543c16e2-7b18-11eb-3bba-fbd8cf708ca5
+# ╠═543c16e2-7b18-11eb-3bba-fbd8cf708ca5
 # ╠═06dbd968-7453-4226-aaea-1580819f8ec3
 # ╟─baadbc4c-7ba3-11eb-3cbb-a32fc7755748
 # ╟─14adad40-6af7-4389-ae3a-b0d2a1462424
@@ -491,7 +673,7 @@ end
 # ╠═5981231a-7ba2-11eb-345d-d3a4a352a66e
 # ╟─08034110-b5a7-44c6-8a71-725998b43f60
 # ╟─2a1fb272-4a2d-45c6-ba58-794fe3012c15
-# ╠═f1c13e1b-0861-4aa5-8459-bc0a7a72eaff
+# ╟─f1c13e1b-0861-4aa5-8459-bc0a7a72eaff
 # ╟─4f53e07b-b7a2-401e-b5c0-d4817635db36
 # ╠═dc4a497c-7b19-11eb-2f9e-ed3c114f7761
 # ╠═7a6f48ad-8173-4ad5-bd4d-4a042fc49882
@@ -499,19 +681,22 @@ end
 # ╟─f2ea9cbc-ebf8-4287-bc2b-afa1a80ea160
 # ╟─c84900c4-9d28-11eb-11dc-7bdfed0e91af
 # ╟─d5beb41a-9d28-11eb-2f1f-69bcc72b2005
+# ╟─4d0dcd7a-a1a1-11eb-305a-fb9789300d55
+# ╟─512d2d9a-a1a8-11eb-36dd-df807afdc1da
+# ╟─71f98784-a1a4-11eb-2afd-b70324f6ade1
 # ╟─0bc25628-9d29-11eb-2d22-070e269ea036
 # ╠═1113b964-9d29-11eb-19db-d1c5cb43d340
 # ╟─2067e1ce-9d29-11eb-06a2-d7b0a7503416
 # ╟─7fdfb708-9d29-11eb-3f7f-1372c5dabf2a
 # ╟─30c1e278-9d2d-11eb-2580-bfbb921fe84a
 # ╟─8f29bd6c-9d29-11eb-0e06-d9b5178cbe33
+# ╟─e99670d2-a1a8-11eb-3cbb-49366adb2667
 # ╟─80f49634-9d2b-11eb-359c-032422eaa82a
-# ╟─ec374b8e-9d36-11eb-2060-7b6de3699a32
+# ╟─95028f46-a1a9-11eb-276c-313e5d8bb515
 # ╟─1ef1a4ca-9d37-11eb-3b9f-7d5e93a9bef0
-# ╟─9841f2fe-7b2b-11eb-3e2d-f315722ca81d
-# ╠═479acc12-915c-11eb-1a4b-f588eb756b0d
-# ╠═075b9028-9161-11eb-0abb-d7f56278d55b
-# ╠═a70ab516-913b-11eb-2f4c-5b3e31e2d669
-# ╟─71bc086e-9164-11eb-255f-df25d4fc05a1
-# ╠═676827ac-ec82-4e22-9171-92494c99e435
-# ╠═c6c96fec-9d2e-11eb-1050-015257bb0640
+# ╟─ec374b8e-9d36-11eb-2060-7b6de3699a32
+# ╟─479acc12-915c-11eb-1a4b-f588eb756b0d
+# ╟─075b9028-9161-11eb-0abb-d7f56278d55b
+# ╟─a70ab516-913b-11eb-2f4c-5b3e31e2d669
+# ╟─ce01f106-a19f-11eb-12e3-cd894166023d
+# ╟─d33ade46-a1a7-11eb-0549-ffc4cb818354

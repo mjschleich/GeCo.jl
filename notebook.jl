@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.21
+# v0.14.2
 
 using Markdown
 using InteractiveUtils
@@ -27,6 +27,11 @@ begin
 	md"""Setup completed"""
 end
 
+# ╔═╡ cb6c4ce9-b83b-4659-95fe-694097dd3260
+begin
+	using StatsPlots
+end
+
 # ╔═╡ baadbc4c-7ba3-11eb-3cbb-a32fc7755748
 md""" 
 # Demonstration of GeCo
@@ -40,10 +45,10 @@ md"""
 """
 
 # ╔═╡ 1b2d0f6b-aab0-430f-9d92-67c6e585bc73
-classifier
+classifier.model
 
 # ╔═╡ 3ebfd05d-8fac-4d4f-af0e-ba5d702014fa
-summary(X)
+X[1:3,:]
 
 # ╔═╡ 87b7c5de-9238-4051-abea-0499ba648ae0
 md""" 
@@ -111,7 +116,7 @@ md"""
 **Step 4.** Run the explanation algorithm """
 
 # ╔═╡ dc4a497c-7b19-11eb-2f9e-ed3c114f7761
-explanations,_  = @time explain(instance, X, plaf_prog, classifier);
+explanations, _  = @time explain(instance, X, plaf_prog, classifier);
 
 # ╔═╡ 7a6f48ad-8173-4ad5-bd4d-4a042fc49882
 explanations[1:3,:]
@@ -129,6 +134,13 @@ if goodness
 else 
 	Markdown.parse(GeCo.actions(explanations, instance; num_actions=actions))
 end
+
+# ╔═╡ 498293d7-58aa-4be1-90de-d0b5ce5c8b42
+md"""**Counterfactual** <details open>
+<summary>Want to ruin the surprise?</summary>
+<br>
+Well, you asked for it!
+</details>"""
 
 # ╔═╡ c84900c4-9d28-11eb-11dc-7bdfed0e91af
 md"""
@@ -223,6 +235,15 @@ let
     figure=PyPlot.gcf()
 end
 
+# ╔═╡ a5043111-1600-4d6d-ac55-185d124abca9
+Plots.bar(1:length(counts), counts,
+	xticks=(1:length(counts), names(instance)),
+	xrotation = 30,
+	framestyle = :box,
+	ylabel="Frequency",
+	label="",
+	)
+
 # ╔═╡ 30c1e278-9d2d-11eb-2580-bfbb921fe84a
 let 
 	namesX = names(instance)
@@ -251,6 +272,17 @@ let
 	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
     figure=PyPlot.gcf()
 end
+
+# ╔═╡ 1954ed36-7393-4ff6-843a-17512f79a92b
+
+groupedbar([pos_counts neg_counts],
+	xticks=(1:length(counts), names(instance)),
+	xrotation = 30,
+	framestyle = :box,
+	ylabel="Frequency",
+	label=["Positive Change" "Negative Change"],
+	)
+
 
 # ╔═╡ 8f29bd6c-9d29-11eb-0e06-d9b5178cbe33
 let 
@@ -663,8 +695,8 @@ let
 end
 
 # ╔═╡ Cell order:
-# ╠═543c16e2-7b18-11eb-3bba-fbd8cf708ca5
-# ╠═06dbd968-7453-4226-aaea-1580819f8ec3
+# ╟─543c16e2-7b18-11eb-3bba-fbd8cf708ca5
+# ╟─06dbd968-7453-4226-aaea-1580819f8ec3
 # ╟─baadbc4c-7ba3-11eb-3cbb-a32fc7755748
 # ╟─14adad40-6af7-4389-ae3a-b0d2a1462424
 # ╠═1b2d0f6b-aab0-430f-9d92-67c6e585bc73
@@ -679,6 +711,7 @@ end
 # ╠═7a6f48ad-8173-4ad5-bd4d-4a042fc49882
 # ╟─b62dd892-5a2d-4a19-a5c4-4c8fc2221222
 # ╟─f2ea9cbc-ebf8-4287-bc2b-afa1a80ea160
+# ╠═498293d7-58aa-4be1-90de-d0b5ce5c8b42
 # ╟─c84900c4-9d28-11eb-11dc-7bdfed0e91af
 # ╟─d5beb41a-9d28-11eb-2f1f-69bcc72b2005
 # ╟─4d0dcd7a-a1a1-11eb-305a-fb9789300d55
@@ -687,8 +720,11 @@ end
 # ╟─0bc25628-9d29-11eb-2d22-070e269ea036
 # ╠═1113b964-9d29-11eb-19db-d1c5cb43d340
 # ╟─2067e1ce-9d29-11eb-06a2-d7b0a7503416
-# ╟─7fdfb708-9d29-11eb-3f7f-1372c5dabf2a
+# ╠═7fdfb708-9d29-11eb-3f7f-1372c5dabf2a
+# ╠═cb6c4ce9-b83b-4659-95fe-694097dd3260
+# ╠═a5043111-1600-4d6d-ac55-185d124abca9
 # ╟─30c1e278-9d2d-11eb-2580-bfbb921fe84a
+# ╠═1954ed36-7393-4ff6-843a-17512f79a92b
 # ╟─8f29bd6c-9d29-11eb-0e06-d9b5178cbe33
 # ╟─e99670d2-a1a8-11eb-3cbb-49366adb2667
 # ╟─80f49634-9d2b-11eb-359c-032422eaa82a

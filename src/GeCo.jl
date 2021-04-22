@@ -224,14 +224,26 @@ end
 
 
 function actions(counterfactuals::DataFrame, orig_instance::DataFrameRow;
-    num_actions::Int64=5, print::Bool=true)
+    num_actions::Int64=5, print::Bool=true, output::String="text")
     out = ""
     for idx in 1:min(num_actions, nrow(counterfactuals))
         cf = counterfactuals[idx,:]
-        out *= "\\\n**COUNTERFACTUAL $(idx)**\\\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)\\\n"
+        if output == "text"
+            out *= "COUNTERFACTUAL $(idx)\\nDesired Outcome: $(cf.outc),\\tScore: $(cf.score)\\n"
+        elseif output == "md"
+            out *= "\\\n**COUNTERFACTUAL $(idx)**\\\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)\\\n"
+        elseif output == "html"
+            out *= "<b>COUNTERFACTUAL $(idx)</b>\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)\n"
+        end
         for feature in propertynames(orig_instance)
             if cf[feature] != orig_instance[feature]
-                out*= "$feature : \t$(orig_instance[feature]) \$\\to\$ $(cf[feature])\\\n"
+                if output == "text"
+                    out *= "$feature : \t$(orig_instance[feature]) --> $(cf[feature])\\n"
+                elseif output == "md"
+                    out*= "$feature : \t$(orig_instance[feature]) \$\\to\$ $(cf[feature])\\\n"
+                elseif output == "html"
+                    out *= "$feature : \t$(orig_instance[feature]) \$\\to\$ $(cf[feature])\\\n"
+                end
             end
         end
     end

@@ -15,21 +15,13 @@ end
 
 # ╔═╡ 543c16e2-7b18-11eb-3bba-fbd8cf708ca5
 begin
-	using GeCo
-	
-	using PlutoUI, PyPlot, DataFrames, Plots, MLJ
-	PyPlot.svg(true);
+	using GeCo, PlutoUI, DataFrames, Plots, MLJ, StatsPlots
 
 	plotly()
 
 	include("notebook/geco_rf_credit_setup.jl");
 	
 	md"""Setup completed"""
-end
-
-# ╔═╡ cb6c4ce9-b83b-4659-95fe-694097dd3260
-begin
-	using StatsPlots
 end
 
 # ╔═╡ baadbc4c-7ba3-11eb-3cbb-a32fc7755748
@@ -132,15 +124,15 @@ Number of actions to display: $(@bind actions NumberField(1:100000; default=5))
 if goodness 
 	md"The provided instance does not require an explanation."
 else 
-	Markdown.parse(GeCo.actions(explanations, instance; num_actions=actions))
+	Markdown.parse(GeCo.actions(explanations, instance; num_actions=actions, output="md"))
 end
 
 # ╔═╡ 498293d7-58aa-4be1-90de-d0b5ce5c8b42
-md"""**Counterfactual** <details open>
-<summary>Want to ruin the surprise?</summary>
-<br>
-Well, you asked for it!
-</details>"""
+#= html"""<b style="font-family:verdana;">Counterfactual</b> 
+<details close>
+<summary style="font-family:courier;">Want to ruin the surprise?</summary>
+....
+</details>""" =#
 
 # ╔═╡ c84900c4-9d28-11eb-11dc-7bdfed0e91af
 md"""
@@ -154,7 +146,12 @@ md""" ## Explanations for 100 instances
 """
 
 # ╔═╡ 1113b964-9d29-11eb-19db-d1c5cb43d340
-instances = X[1:200, :];
+begin 
+	preds = MLJ.pdf.(MLJ.predict(classifier, X),1)
+	instances = X[1:200, :];
+	neg_instances = X[preds .>= 0.5, :][1:100, :]
+	neg_instances[1:3,:]
+end
 
 # ╔═╡ 2067e1ce-9d29-11eb-06a2-d7b0a7503416
 begin 
@@ -207,33 +204,7 @@ begin
 	end
 
 	weights, counts, cum_change, pos_counts, neg_counts, pos_cum_change, neg_cum_change = generate_explantions(instances, X, classifier, plaf_prog, 5);
-	
-end
-
-# ╔═╡ 7fdfb708-9d29-11eb-3f7f-1372c5dabf2a
-let 
-	namesX = names(instance)
-	fig = PyPlot.matplotlib.pyplot.figure(figsize=(15, 6), dpi=80)
-	a = []
-	text = ""
-	for i in 1:length(namesX)
-		text *= "$(i) : $(namesX[i]) \n"
-		append!(a, i)
-	end
-	
-	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
-
-    PyPlot.clf() 
-    PyPlot.bar(a, counts) 
-	# PyPlot.scatter(namesX, weights) 
-	PyPlot.matplotlib.pyplot.xlabel("Feature")
-	PyPlot.matplotlib.pyplot.ylabel("Counts")
-	PyPlot.matplotlib.pyplot.title("Counts For Each Feature Changed")
-	
-	
-	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
-    figure=PyPlot.gcf()
-end
+end;
 
 # ╔═╡ a5043111-1600-4d6d-ac55-185d124abca9
 Plots.bar(1:length(counts), counts,
@@ -243,35 +214,6 @@ Plots.bar(1:length(counts), counts,
 	ylabel="Frequency",
 	label="",
 	)
-
-# ╔═╡ 30c1e278-9d2d-11eb-2580-bfbb921fe84a
-let 
-	namesX = names(instance)
-	fig = PyPlot.matplotlib.pyplot.figure(figsize=(15, 6), dpi=80)
-	a_1 = []
-	a_2 = []
-	text = ""
-	for i in 1:length(namesX)
-		text *= "$(i) : $(namesX[i]) \n"
-		append!(a_1, i-0.2)
-		append!(a_2, i+0.2)
-	end
-	
-	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
-
-    PyPlot.clf()
-	width = 0.4
-	PyPlot.bar(a_1, pos_counts, width, color="cyan") 
-	PyPlot.bar(a_2, neg_counts, width, color="orange") 
-	# PyPlot.scatter(namesX, weights) 
-	PyPlot.matplotlib.pyplot.xlabel("Feature")
-	PyPlot.matplotlib.pyplot.ylabel("Counts")
-	PyPlot.matplotlib.pyplot.title("Counts For Each Feature Changed")
-	PyPlot.legend(["Positive Change", "Negative Change"])
-	
-	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
-    figure=PyPlot.gcf()
-end
 
 # ╔═╡ 1954ed36-7393-4ff6-843a-17512f79a92b
 
@@ -286,107 +228,46 @@ groupedbar([pos_counts neg_counts],
 
 # ╔═╡ 8f29bd6c-9d29-11eb-0e06-d9b5178cbe33
 let 
-	namesX = names(instance)
-	fig = PyPlot.matplotlib.pyplot.figure(figsize=(10, 6), dpi=80)
+	ave_change = [
+		(counts[i] == 0) ? 0 : cum_change[i]/counts[i] 
+		for i in 1:length(instance)
+	]
 
-    PyPlot.clf() 
-    # PyPlot.bar(namesX, weights) 
-	ave_change = []
-	a = []
-	max = 0
-	text = ""
-	for i in 1:length(namesX)
-		if counts[i] == 0
-			append!(ave_change, 0)
-		else
-			val = cum_change[i]/counts[i]
-			if val > max
-				max = val
-			end
-			append!(ave_change, val)
-		end
-		text *= "$(i) : $(namesX[i]) \n"
-		append!(a, i)
-	end
-	PyPlot.bar(a, ave_change) 
-	PyPlot.matplotlib.pyplot.xlabel("Feature")
-	PyPlot.matplotlib.pyplot.ylabel("Average Changed")
-	PyPlot.matplotlib.pyplot.title("Absolute Average Changed For Each Feature")
-	
-	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
-	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
-	figure=PyPlot.gcf()
-
+	Plots.bar(1:length(ave_change), ave_change,
+	xticks=(1:length(ave_change), names(instance)),
+	xrotation = 30,
+	framestyle = :box,
+	ylabel="l1-distance",
+	title="Average Absolute Change",
+	label="",
+	)
 end
 
 # ╔═╡ 80f49634-9d2b-11eb-359c-032422eaa82a
 # pos_counts, neg_counts, pos_cum_change, neg_cum_change
 let 
-	namesX = names(instance)
-	fig = PyPlot.matplotlib.pyplot.figure(figsize=(10, 6), dpi=80)
+	pos_changes = [
+		(pos_counts[i] == 0) ? 0 : pos_cum_change[i]/pos_counts[i] 
+		for i in 1:length(instance)
+	]
+	neg_changes = [
+		( neg_counts[i] == 0 ) ? 0 : neg_cum_change[i]/neg_counts[i]
+		for i in 1:length(instance)
+	]
 
-    PyPlot.clf() 
-    # PyPlot.bar(namesX, weights) 
-	pos_changes = []
-	neg_changes = []
-	a_1 = []
-	a_2 = []
-	text = ""
-	for i in 1:length(namesX)
-		if pos_counts[i] == 0
-			append!(pos_changes, 0)
-		else
-			append!(pos_changes, pos_cum_change[i]/pos_counts[i])
-		end
-		if neg_counts[i] == 0
-			append!(neg_changes, 0)
-		else
-			append!(neg_changes, neg_cum_change[i]/neg_counts[i])
-		end
-		text *= "$(i) : $(namesX[i]) \n"
-		append!(a_1, i-0.2)
-		append!(a_2, i+0.2)
-	end
-	width = 0.4
-	PyPlot.bar(a_1, pos_changes, width, color="cyan") 
-	PyPlot.bar(a_2, neg_changes, width, color="orange") 
-	PyPlot.matplotlib.pyplot.xlabel("Feature")
-	PyPlot.matplotlib.pyplot.ylabel("Average Changed")
-	PyPlot.matplotlib.pyplot.title("Average Changed For Each Feature")
-	PyPlot.legend(["Positive Change", "Negative Change"])
-	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
-	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
-	figure=PyPlot.gcf()
+	groupedbar([pos_counts neg_counts],
+		xticks=(1:length(counts), names(instance)),
+		xrotation = 30,
+		framestyle = :box,
+		ylabel="Frequency",
+		# title="Average Changed For Each Feature",
+		label=["Positive Change" "Negative Change"],
+		)
 end
 
-# ╔═╡ ec374b8e-9d36-11eb-2060-7b6de3699a32
-function get_feature_text()
-	feature_text = ""
-	namesX = names(instance)
-	for i in 1:length(namesX)
-		feature_text *= "$(i) : $(namesX[i]) \\\n "
-	end
-	return Markdown.parse(feature_text)
-end;
-
-
-# ╔═╡ 512d2d9a-a1a8-11eb-36dd-df807afdc1da
- get_feature_text()
-
-# ╔═╡ 1ef1a4ca-9d37-11eb-3b9f-7d5e93a9bef0
-feature_text = get_feature_text()
-
 # ╔═╡ 479acc12-915c-11eb-1a4b-f588eb756b0d
-function feature_to_index()
-	feature_dict = Dict()
-	for (f_index, feature) in enumerate(String.(names(orig_instance)))
-		feature_dict[feature] = f_index
-	end
-	return feature_dict
-end;
-
-# ╔═╡ 075b9028-9161-11eb-0abb-d7f56278d55b
-feature_dict = feature_to_index();
+feature_dict = Dict(feature => f_index 
+	for (f_index, feature) in 	enumerate(names(orig_instance)));
 
 # ╔═╡ a70ab516-913b-11eb-2f4c-5b3e31e2d669
 function get_group(user_explanations, k, ori_instance)
@@ -480,33 +361,6 @@ function get_group(user_explanations, k, ori_instance)
 	return dict
 end;
 
-
-# ╔═╡ 06dbd968-7453-4226-aaea-1580819f8ec3
-function generate_group_action(goodness, explanations, actions, user_input, K)
-	out = ""
-	if  (!goodness)
-		groups = get_group(explanations, K, user_input)
-		for index in 0:length(groups)-1
-			group = groups[index]
-			features = String.(names(group))
-			out *= "\\\n**COUNTERFACTUAL GROUP : $(features)**\\\n"
-			for r_index in 1:nrow(group)
-				cf = group[r_index,:]
-				out *= " -- COUNTERFACTUAL $(r_index)\\\n"
-				for feature in features
-					out *= "$(feature) ： $(user_input[feature_dict[feature]]) \$\\to\$ $(cf[feature])\\\n"
-				end
-			end
-		end
-	end
-	return out
-end;
-
-# ╔═╡ d5beb41a-9d28-11eb-2f1f-69bcc72b2005
-Markdown.parse(
-	generate_group_action(false, explanations, actions, orig_instance, K_PLAF)
-)
-
 # ╔═╡ 4d0dcd7a-a1a1-11eb-305a-fb9789300d55
 let 
 	if  (!goodness)
@@ -555,15 +409,40 @@ let
 		plot_ret
 		
 	end
-end
+end;
+
+# ╔═╡ 06dbd968-7453-4226-aaea-1580819f8ec3
+function generate_group_action(goodness, explanations, actions, user_input, K)
+	out = ""
+	if  (!goodness)
+		groups = get_group(explanations, K, user_input)
+		for index in 0:length(groups)-1
+			group = groups[index]
+			features = String.(names(group))
+			out *= "\\\n**COUNTERFACTUAL GROUP : $(features)**\\\n"
+			for r_index in 1:nrow(group)
+				cf = group[r_index,:]
+				out *= " -- COUNTERFACTUAL $(r_index)\\\n"
+				for feature in features
+					out *= "$(feature) ： $(user_input[feature_dict[feature]]) \$\\to\$ $(cf[feature])\\\n"
+				end
+			end
+		end
+	end
+	return out
+end;
+
+# ╔═╡ d5beb41a-9d28-11eb-2f1f-69bcc72b2005
+Markdown.parse(
+	generate_group_action(false, explanations, actions, orig_instance, K_PLAF)
+)
 
 # ╔═╡ ce01f106-a19f-11eb-12e3-cd894166023d
 function get_space()
 	ranges = Dict(String(feature) => max(1.0, Float64(maximum(col)-minimum(col))) for (feature, col) in pairs(eachcol(X)))
 	maxs = Dict(String(feature) => Float64(maximum(col)) for (feature, col) in pairs(eachcol(X)))
 	mins = Dict(String(feature) => Float64(minimum(col)) for (feature, col) in pairs(eachcol(X)))
-	space = Dict("ranges" => ranges, "maxs" => maxs,"mins" => mins)
-	 space
+	return Dict("ranges" => ranges, "maxs" => maxs,"mins" => mins)
 end;
 
 # ╔═╡ d33ade46-a1a7-11eb-0549-ffc4cb818354
@@ -596,12 +475,14 @@ let
 			row_index = 1
 			for feature in features
 				ori_xs[row_index] = string(feature_dict[feature])
-				append!(ori_ys, (user_input[feature_dict[feature]]-space["mins"][feature]) / space["ranges"][feature])
+				append!(ori_ys, 
+					(user_input[feature_dict[feature]]-space["mins"][feature]) / 
+					space["ranges"][feature])
 				row_index += 1
 			end
 			
-			p_cur = Plots.scatter(xs, ys, label = "cf")
-			scatter!(ori_xs, ori_ys, label = "ori")
+			p_cur = Plots.scatter(xs, ys, label = "")
+			scatter!(ori_xs, ori_ys, label = "")
 			if count == 1
 				plot_ret = p_cur 
 			elseif count == length(groups)
@@ -622,81 +503,59 @@ end
 # ╔═╡ e99670d2-a1a8-11eb-3cbb-49366adb2667
 let 
 	namesX = names(instance)
-	fig = PyPlot.matplotlib.pyplot.figure(figsize=(10, 6), dpi=80)
-
-    PyPlot.clf() 
-    # PyPlot.bar(namesX, weights) 
-	ave_change = []
-	a = []
-	max = 0
-	text = ""
-	for i in 1:length(namesX)
-		if counts[i] == 0
-			append!(ave_change, 0)
-		else
-			val = cum_change[i]/counts[i]/ space["ranges"][namesX[i]]
-			if val > max
-				max = val
-			end
-			append!(ave_change, val)
-		end
-		text *= "$(i) : $(namesX[i]) \n"
-		append!(a, i)
-	end
-	PyPlot.bar(a, ave_change) 
-	PyPlot.matplotlib.pyplot.xlabel("Feature")
-	PyPlot.matplotlib.pyplot.ylabel("Average Changed (respect to feature range)")
-	PyPlot.matplotlib.pyplot.title("Average Changed in Percentage (respect to feature range) For Each Feature")
+	ranges = space["ranges"]
+	ave_change = [
+		(counts[i] == 0) ? 0 : (cum_change[i]/counts[i]) / ranges[namesX[i]]
+		for i in 1:length(namesX)
+	]
 	
-	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
-	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
-	figure=PyPlot.gcf()
-
+	Plots.bar(1:length(ave_change), ave_change,
+		xticks=(1:length(ave_change), names(instance)),
+		xrotation = 30,
+		framestyle = :box,
+		ylabel="l1-distance",
+		title="Average Change w.r.t. Feature Range",
+		label=""
+		)
 end
 
 # ╔═╡ 95028f46-a1a9-11eb-276c-313e5d8bb515
 # pos_counts, neg_counts, pos_cum_change, neg_cum_change
 let 
 	namesX = names(instance)
-	fig = PyPlot.matplotlib.pyplot.figure(figsize=(10, 6), dpi=80)
-
-    PyPlot.clf() 
-    # PyPlot.bar(namesX, weights) 
 	pos_changes = []
 	neg_changes = []
-	a_1 = []
-	a_2 = []
-	text = ""
-	for i in 1:length(namesX)
+
+	ranges = space["ranges"]
+	
+	for i in 1:length(instance)
 		if pos_counts[i] == 0
 			append!(pos_changes, 0)
 		else
-			append!(pos_changes, pos_cum_change[i]/pos_counts[i]/ space["ranges"][namesX[i]])
+			append!(pos_changes, 
+				(pos_cum_change[i]/pos_counts[i])/ranges[namesX[i]])
 		end
 		if neg_counts[i] == 0
 			append!(neg_changes, 0)
 		else
-			append!(neg_changes, neg_cum_change[i]/neg_counts[i]/ space["ranges"][namesX[i]])
+			append!(neg_changes, 
+				(neg_cum_change[i]/neg_counts[i])/ranges[namesX[i]])
 		end
-		text *= "$(i) : $(namesX[i]) \n"
-		append!(a_1, i-0.2)
-		append!(a_2, i+0.2)
 	end
-	width = 0.4
-	PyPlot.bar(a_1, pos_changes, width, color="cyan") 
-	PyPlot.bar(a_2, neg_changes, width, color="orange") 
-	PyPlot.matplotlib.pyplot.xlabel("Feature")
-	PyPlot.matplotlib.pyplot.ylabel("Average Changed in Percentage")
-	PyPlot.matplotlib.pyplot.title("Average Changed in Percentage (respect to feature range) For Each Feature")
-	PyPlot.legend(["Positive Change", "Negative Change"])
-	box_sty = Dict([("boxstyle","round"), ("facecolor","wheat"), ("alpha",0.5)])
-	PyPlot.text(length(namesX)+2, 0, text, style="italic", fontsize=12, bbox = box_sty)
-	figure=PyPlot.gcf()
+	
+	groupedbar([pos_changes neg_changes],
+		xticks=(1:length(counts), names(instance)),
+		xrotation = 30,
+		framestyle = :box,
+		ylabel="l1-distance",
+		key=:outertopright,
+		title="Average Change w.r.t. Feature Range",
+		label=["Positive Change" "Negative Change"],
+		)
 end
 
 # ╔═╡ Cell order:
 # ╟─543c16e2-7b18-11eb-3bba-fbd8cf708ca5
-# ╟─06dbd968-7453-4226-aaea-1580819f8ec3
 # ╟─baadbc4c-7ba3-11eb-3cbb-a32fc7755748
 # ╟─14adad40-6af7-4389-ae3a-b0d2a1462424
 # ╠═1b2d0f6b-aab0-430f-9d92-67c6e585bc73
@@ -711,28 +570,22 @@ end
 # ╠═7a6f48ad-8173-4ad5-bd4d-4a042fc49882
 # ╟─b62dd892-5a2d-4a19-a5c4-4c8fc2221222
 # ╟─f2ea9cbc-ebf8-4287-bc2b-afa1a80ea160
-# ╠═498293d7-58aa-4be1-90de-d0b5ce5c8b42
+# ╟─498293d7-58aa-4be1-90de-d0b5ce5c8b42
 # ╟─c84900c4-9d28-11eb-11dc-7bdfed0e91af
 # ╟─d5beb41a-9d28-11eb-2f1f-69bcc72b2005
 # ╟─4d0dcd7a-a1a1-11eb-305a-fb9789300d55
-# ╟─512d2d9a-a1a8-11eb-36dd-df807afdc1da
 # ╟─71f98784-a1a4-11eb-2afd-b70324f6ade1
 # ╟─0bc25628-9d29-11eb-2d22-070e269ea036
-# ╠═1113b964-9d29-11eb-19db-d1c5cb43d340
+# ╟─1113b964-9d29-11eb-19db-d1c5cb43d340
 # ╟─2067e1ce-9d29-11eb-06a2-d7b0a7503416
-# ╠═7fdfb708-9d29-11eb-3f7f-1372c5dabf2a
-# ╠═cb6c4ce9-b83b-4659-95fe-694097dd3260
-# ╠═a5043111-1600-4d6d-ac55-185d124abca9
-# ╟─30c1e278-9d2d-11eb-2580-bfbb921fe84a
-# ╠═1954ed36-7393-4ff6-843a-17512f79a92b
+# ╟─a5043111-1600-4d6d-ac55-185d124abca9
+# ╟─1954ed36-7393-4ff6-843a-17512f79a92b
 # ╟─8f29bd6c-9d29-11eb-0e06-d9b5178cbe33
 # ╟─e99670d2-a1a8-11eb-3cbb-49366adb2667
 # ╟─80f49634-9d2b-11eb-359c-032422eaa82a
 # ╟─95028f46-a1a9-11eb-276c-313e5d8bb515
-# ╟─1ef1a4ca-9d37-11eb-3b9f-7d5e93a9bef0
-# ╟─ec374b8e-9d36-11eb-2060-7b6de3699a32
 # ╟─479acc12-915c-11eb-1a4b-f588eb756b0d
-# ╟─075b9028-9161-11eb-0abb-d7f56278d55b
+# ╟─06dbd968-7453-4226-aaea-1580819f8ec3
 # ╟─a70ab516-913b-11eb-2f4c-5b3e31e2d669
 # ╟─ce01f106-a19f-11eb-12e3-cd894166023d
 # ╟─d33ade46-a1a7-11eb-0549-ffc4cb818354

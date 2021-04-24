@@ -1,4 +1,4 @@
-import Pkg; Pkg.activate(".")
+# import Pkg; Pkg.activate(".")
 using GeCo, CSV, Statistics, DataFrames, MLJ, PyCall, ScikitLearn
 
 path = "data/credit"

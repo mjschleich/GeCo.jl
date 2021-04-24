@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.2
+# v0.14.3
 
 using Markdown
 using InteractiveUtils
@@ -13,7 +13,7 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 543c16e2-7b18-11eb-3bba-fbd8cf708ca5
+# ╔═╡ 14adad40-6af7-4389-ae3a-b0d2a1462424
 begin
 	using GeCo, PlutoUI, DataFrames, Plots, MLJ, StatsPlots
 
@@ -21,20 +21,18 @@ begin
 
 	include("notebook/geco_rf_credit_setup.jl");
 	
-	md"""Setup completed"""
+	md"""
+	**Step 1.** Provide a pre-learned classifier and dataset
+	"""
 end
+
 
 # ╔═╡ baadbc4c-7ba3-11eb-3cbb-a32fc7755748
 md""" 
-# Demonstration of GeCo
+## Demonstration of GeCo
 """
 
 
-
-# ╔═╡ 14adad40-6af7-4389-ae3a-b0d2a1462424
-md"""
-**Step 1.** Provide a pre-learned classifier and dataset
-"""
 
 # ╔═╡ 1b2d0f6b-aab0-430f-9d92-67c6e585bc73
 classifier.model
@@ -115,96 +113,77 @@ explanations[1:3,:]
 
 # ╔═╡ b62dd892-5a2d-4a19-a5c4-4c8fc2221222
 md"""
-### Top Counterfactual Explanations
+### Top Explanations
 
-Number of actions to display: $(@bind actions NumberField(1:100000; default=5))
+Show counterfactual: $(@bind cf_index NumberField(1:nrow(explanations); default=1))
 """
 
 # ╔═╡ f2ea9cbc-ebf8-4287-bc2b-afa1a80ea160
 if goodness 
 	md"The provided instance does not require an explanation."
 else 
-	Markdown.parse(GeCo.actions(explanations, instance; num_actions=actions, output="md"))
+	# Markdown.parse(GeCo.actions(explanations, instance; num_actions=actions, output="md"))
+ 	Markdown.parse(GeCo.actionsDemo(explanations, instance)[cf_index])
 end
-
-# ╔═╡ 498293d7-58aa-4be1-90de-d0b5ce5c8b42
-#= html"""<b style="font-family:verdana;">Counterfactual</b> 
-<details close>
-<summary style="font-family:courier;">Want to ruin the surprise?</summary>
-....
-</details>""" =#
-
-# ╔═╡ c84900c4-9d28-11eb-11dc-7bdfed0e91af
-md"""
-### Summary of Generated Explanations
-
-Number of groups： $(@bind K_PLAF NumberField(1:100000; default=3))
-"""
 
 # ╔═╡ 0bc25628-9d29-11eb-2d22-070e269ea036
-md""" ## Explanations for 100 instances
-"""
-
-# ╔═╡ 1113b964-9d29-11eb-19db-d1c5cb43d340
-begin 
-	preds = MLJ.pdf.(MLJ.predict(classifier, X),1)
-	instances = X[1:200, :];
-	neg_instances = X[preds .>= 0.5, :][1:100, :]
-	neg_instances[1:3,:]
-end
-
-# ╔═╡ 2067e1ce-9d29-11eb-06a2-d7b0a7503416
-begin 
-	function generate_explantions(instance, X, classifier, p, K)
+begin
+	function generate_explantions(X, classifier, p, K)
+		
 		# the result list -> one for each feature
-		num_rows = nrow(instance)
+		num_rows = nrow(X)
 		num_features = ncol(X)
+		
 		weights = zeros(num_features)
+		
 		counts = zeros(num_features)
 		pos_counts = zeros(num_features)
 		neg_counts = zeros(num_features)
+		
 		cum_change = zeros(num_features)
 		pos_cum_change = zeros(num_features)
 		neg_cum_change = zeros(num_features)
-		orig_frame = DataFrame(instance)
-		insertcols!(orig_frame,
-				:score=>zeros(Float64, num_rows),
-				:outc=>falses(num_rows),
-				:estcf=>falses(num_rows),
-				:mod=>BitVector[falses(num_features) for _=1:num_rows]
-				)
-		scores = GeCo.score(classifier, orig_frame, 1)
-		for row_num in 1:num_rows
-			if scores[row_num] < 0.5
-				# print(instance[row_num,:])
-				cur_ins = instance[row_num,:]
-				explanations,  = explain(cur_ins, X, p, classifier)
-				for i in 1:K
-					explanation = explanations[i, :]
-					indices = findall(explanation[:mod])
-					for index in indices
-						weights[index] += 1.0/length(indices)
-						counts[index] += 1
-						cum_change[index] += abs(cur_ins[index] - explanation[index])
-						if (explanation[index] > cur_ins[index])
-							pos_counts[index] += 1
-							pos_cum_change[index] += 
-								abs(cur_ins[index] - explanation[index])
-						else
-							neg_counts[index] += 1
-							neg_cum_change[index] += 
-								abs(cur_ins[index] - explanation[index])
-						end
+		
 
+		preds = MLJ.pdf.(MLJ.predict(classifier, X),1)
+		instances = X[preds .>= 0.5, :][1:100, :]
+
+		for cur_ins in eachrow(instances)
+			explanations,  = explain(cur_ins, X, p, classifier)
+			for i in 1:K
+				explanation = explanations[i, :]
+				indices = findall(explanation[:mod])
+				for index in indices
+					weights[index] += 1.0/length(indices)
+					counts[index] += 1
+					cum_change[index] += abs(cur_ins[index] - explanation[index])
+					if (explanation[index] > cur_ins[index])
+						pos_counts[index] += 1
+						pos_cum_change[index] += 
+							abs(cur_ins[index] - explanation[index])
+					else
+						neg_counts[index] += 1
+						neg_cum_change[index] += 
+							abs(cur_ins[index] - explanation[index])
 					end
+
 				end
 			end
 		end
-		return weights, counts, cum_change, pos_counts, neg_counts, pos_cum_change, neg_cum_change
+		
+		return instances, weights, counts, cum_change, pos_counts, neg_counts, 
+			pos_cum_change, neg_cum_change
 	end
 
-	weights, counts, cum_change, pos_counts, neg_counts, pos_cum_change, neg_cum_change = generate_explantions(instances, X, classifier, plaf_prog, 5);
-end;
+	instances, weights, counts, cum_change, pos_counts, neg_counts, pos_cum_change, neg_cum_change = generate_explantions(X, classifier, plaf_prog, 5)
+	
+	 
+	md""" ## Explanations for multiple instances
+	"""
+end
+
+# ╔═╡ 1113b964-9d29-11eb-19db-d1c5cb43d340
+instances[1:100,:]
 
 # ╔═╡ a5043111-1600-4d6d-ac55-185d124abca9
 Plots.bar(1:length(counts), counts,
@@ -265,239 +244,175 @@ let
 		)
 end
 
-# ╔═╡ 479acc12-915c-11eb-1a4b-f588eb756b0d
-feature_dict = Dict(feature => f_index 
-	for (f_index, feature) in 	enumerate(names(orig_instance)));
+# ╔═╡ 95490a61-0aa7-40f0-aa78-da9a2db11852
+md"### Auxiliary Functions"
 
 # ╔═╡ a70ab516-913b-11eb-2f4c-5b3e31e2d669
-function get_group(user_explanations, k, ori_instance)
-	sort!(user_explanations, :score)
-	# user_explanations = user_explanations[1:k,:]
-	dict::Dict{Int64, DataFrame} = Dict()
-	group_index = 0
-	group_explanations = groupby(user_explanations, :mod)
-	for group in group_explanations
-		explanations_g = group[:,1:14]
-		explanations_g = explanations_g[:, filter(x -> x = true, group[1, :mod])]
-		
-		# we should filter out the rows that is dominate by others
-		row_num = 1
-		while row_num <= nrow(explanations_g)
-			# check whether this row is a trivial one based on each of the previous rows and groups
-			cur_instance = explanations_g[row_num,:]
-			trivial = false
-			
-			# check for each of the previous groups
-			for prev_group_index in 0:group_index-1
-				
-				prev_group = dict[prev_group_index]
-				if !issubset(names(prev_group), names(explanations_g))
-					
-					continue
-				end
-				
-				for prev_group_row in 1:nrow(prev_group)
-					
-					prev_i = prev_group[prev_group_row,:]
-					check = 0
-					for feature_index in names(prev_group)
-						if !(ori_instance[feature_index] < prev_i[feature_index] 
-							<= cur_instance[feature_index] ||  
-							ori_instance[feature_index] > prev_i[feature_index] >= 
-							cur_instance[feature_index])
+begin 
+	function get_group(user_explanations, k, ori_instance)
+		# sort!(user_explanations, :score)
+
+		groups = Vector{DataFrame}()
+		group_explanations = groupby(user_explanations, :mod)
+
+		for (group_index,group) in enumerate(group_explanations)
+			explanations_g = group[:,1:14]
+			explanations_g = explanations_g[:, filter(x -> x = true, group[1, :mod])]
+
+			# we should filter out the rows that is dominate by others
+			row_num = 1
+
+			keep_rows = trues(nrow(explanations_g))
+
+			for (row_num, cur_instance) in enumerate(eachrow(explanations_g))
+				# check if this row is dominated by previous rows and groups
+
+				dominatedrow = false
+
+				# check for each of the previous groups
+				for prev_group in groups
+
+					if !issubset(propertynames(prev_group), 
+							propertynames(explanations_g))
+						continue
+					end
+
+					for prev_group_row in eachrow(prev_group)
+						isdominated = true
+						for feature in propertynames(prev_group)
+							if !(ori_instance[feature] < 
+									prev_group_row[feature] <=
+									cur_instance[feature] 
+									||  
+									ori_instance[feature] > 
+									prev_group_row[feature] >= 
+									cur_instance[feature])
+								isdominated = false 
+								break
+							end
+						end
+						if isdominated
+							dominatedrow = true
 							break
 						end
-						check += 1
 					end
-					if check == length(names(prev_group))
-						trivial = true
+					if dominatedrow
 						break
 					end
 				end
-				if trivial
-					break
+				if dominatedrow
+					keep_rows[row_num] = false 
+					continue
 				end
-			end
-			if trivial
-				deleterows!(explanations_g, row_num)
-				continue
-			end
-	
-			# check for each of the previous rows
-			for prev_row in 1:row_num-1
-				prev_instance = explanations_g[prev_row,:]
-				check = 0
-				for feature_index in names(explanations_g)
-					if !(ori_instance[feature_index] < prev_instance[feature_index] 
-						<= cur_instance[feature_index] ||  
-						ori_instance[feature_index] > prev_instance[feature_index] >= 
-						cur_instance[feature_index])
+
+				# check for each of the previous rows
+				for prev_row in 1:row_num-1
+					prev_instance = explanations_g[prev_row,:]
+					isdominated = true
+					for feature in propertynames(explanations_g)
+						if !(ori_instance[feature] <
+								prev_instance[feature] <= 
+								cur_instance[feature] 
+							||  
+								ori_instance[feature] > 
+								prev_instance[feature] >= 
+								cur_instance[feature]
+							)
+							isdominated = false
+							break
+						end
+					end
+					if isdominated
+						dominatedrow = true
 						break
 					end
-					check += 1
 				end
-				if check == length(names(explanations_g))
-					trivial = true
-					break
+				if dominatedrow
+					keep_rows[row_num] = false 
 				end
 			end
-			if trivial
-				deleterows!(explanations_g, row_num)
-				row_num -= 1
+
+			explanations_g = unique(explanations_g[keep_rows, :])
+			if !isempty(explanations_g)
+				push!(groups, explanations_g)
 			end
-			row_num += 1
 		end
-		if (row_num == 1)
-			continue
-		end
-		unique!(explanations_g)
-	
-		dict[group_index] = explanations_g
-		group_index += 1
-		if group_index >= k
-			break
-		end
+		return groups
 	end
-	return dict
-end;
+	
+	md"get group"
+end
 
-# ╔═╡ 4d0dcd7a-a1a1-11eb-305a-fb9789300d55
-let 
-	if  (!goodness)
-		plot_ret = nothing
-		count = 1
-		groups = get_group(explanations, K_PLAF, instance)
+# ╔═╡ fa8320c0-1759-4f16-83ca-8329493b9dfa
+begin
+	groups = get_group(explanations, 10, orig_instance)
+	options= ["$i"=>join(names(v),", ") for (i,v) in enumerate(groups)]
 
-		for index in 0:length(groups)-1
-			row_index = 1
-			group = groups[index]
-			features = String.(names(group))
-			xs = Array{String}(undef, nrow(group)*length(features))
-			ys = []
-			
-			for r_index in 1:DataFrames.nrow(group)
-				cf = group[r_index,:]
-				for feature in features
-					xs[row_index] = string(feature_dict[feature])
-					row_index += 1
-					append!(ys, cf[feature])
-				end
-			end
-			ori_xs = Array{String}(undef,length(features))
-			ori_ys = []
-			row_index = 1
-			for feature in features
-				ori_xs[row_index] = string(feature_dict[feature])
-				append!(ori_ys, user_input[feature_dict[feature]])
-				row_index += 1
-			end
-			
-			p_cur = Plots.scatter(xs, ys, label = "cf")
-			scatter!(ori_xs, ori_ys, label = "ori")
-			if count == 1
-				plot_ret = p_cur 
-			elseif count == length(groups)
-				plot_ret = Plots.plot(plot_ret, p_cur, 
-					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
-			else
-				plot_ret = Plots.plot(plot_ret, p_cur, 
-					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
-			end
-			count += 1
-			
+	md"""
+	### Summary of Explanations
+	
+	Show Counterfactual Group: $(@bind group_index Select(options))"""
+end
+
+# ╔═╡ 997132af-d04c-4745-a42a-2563e07b5ca6
+begin
+	group_idx = parse(Int64, group_index)
+	
+	function generateGroupActions(groups, actions, orig_instance, group_id)
+		group = groups[group_id]
+		features = names(group)
+		top = "**Changed Features:** $(join(features, ", "))\\\n"
+		top *= "Number of counterfactuals: $(nrow(group))\\\n"
+		top *= "Minimum Change:\\\n"
+
+		cf = group[1,:]
+		for feature in features
+			top *= "-- $(feature) ： $(orig_instance[feature]) \$\\to\$ $(cf[feature])\\\n"
 		end
-		plot_ret
 		
-	end
-end;
-
-# ╔═╡ 06dbd968-7453-4226-aaea-1580819f8ec3
-function generate_group_action(goodness, explanations, actions, user_input, K)
-	out = ""
-	if  (!goodness)
-		groups = get_group(explanations, K, user_input)
-		for index in 0:length(groups)-1
-			group = groups[index]
-			features = String.(names(group))
-			out *= "\\\n**COUNTERFACTUAL GROUP : $(features)**\\\n"
-			for r_index in 1:nrow(group)
-				cf = group[r_index,:]
-				out *= " -- COUNTERFACTUAL $(r_index)\\\n"
-				for feature in features
-					out *= "$(feature) ： $(user_input[feature_dict[feature]]) \$\\to\$ $(cf[feature])\\\n"
-				end
+		all = ""
+		for (rid,cf) in enumerate(eachrow(groups[group_id]))
+			all *= "**Counterfactual $rid**\\\n"
+			for feature in features
+				all *= "-- $(feature) ： $(orig_instance[feature]) \$\\to\$ $(cf[feature])\\\n"
 			end
 		end
+		return top, all 
 	end
-	return out
-end;
+	
+	top, all = generateGroupActions(groups, actions, instance, group_idx)
+	Markdown.parse(top)
+end
 
-# ╔═╡ d5beb41a-9d28-11eb-2f1f-69bcc72b2005
-Markdown.parse(
-	generate_group_action(false, explanations, actions, orig_instance, K_PLAF)
-)
+# ╔═╡ 3245072c-e91e-418c-b8ce-63386333da8c
+begin
+	struct Foldable{C}
+		title::String
+		content::C
+	end
+	function Base.show(io, mime::MIME"text/html", fld::Foldable)
+		write(io,"<details><summary>$(fld.title)</summary><p>")
+		show(io, mime, fld.content)
+		write(io,"</p></details>")
+	end	
+
+	Foldable(string("Show all suggested changes: "), Markdown.parse(all))
+end 
 
 # ╔═╡ ce01f106-a19f-11eb-12e3-cd894166023d
-function get_space()
-	ranges = Dict(String(feature) => max(1.0, Float64(maximum(col)-minimum(col))) for (feature, col) in pairs(eachcol(X)))
-	maxs = Dict(String(feature) => Float64(maximum(col)) for (feature, col) in pairs(eachcol(X)))
-	mins = Dict(String(feature) => Float64(minimum(col)) for (feature, col) in pairs(eachcol(X)))
-	return Dict("ranges" => ranges, "maxs" => maxs,"mins" => mins)
-end;
-
-# ╔═╡ d33ade46-a1a7-11eb-0549-ffc4cb818354
-space = get_space();
-
-# ╔═╡ 71f98784-a1a4-11eb-2afd-b70324f6ade1
-let 
-	if  (!goodness)
-		plot_ret = nothing
-		count = 1
-		groups = get_group(explanations, K_PLAF, instance)
-
-		for index in 0:length(groups)-1
-			row_index = 1
-			group = groups[index]
-			features = String.(names(group))
-			xs = Array{String}(undef, nrow(group)*length(features))
-			ys = []
-			
-			for r_index in 1:DataFrames.nrow(group)
-				cf = group[r_index,:]
-				for feature in features
-					xs[row_index] = string(feature_dict[feature])
-					row_index += 1
-					append!(ys, (cf[feature]-space["mins"][feature]) / space["ranges"][feature])
-				end
-			end
-			ori_xs = Array{String}(undef,length(features))
-			ori_ys = []
-			row_index = 1
-			for feature in features
-				ori_xs[row_index] = string(feature_dict[feature])
-				append!(ori_ys, 
-					(user_input[feature_dict[feature]]-space["mins"][feature]) / 
-					space["ranges"][feature])
-				row_index += 1
-			end
-			
-			p_cur = Plots.scatter(xs, ys, label = "")
-			scatter!(ori_xs, ori_ys, label = "")
-			if count == 1
-				plot_ret = p_cur 
-			elseif count == length(groups)
-				plot_ret = Plots.plot(plot_ret, p_cur, 
-					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
-			else
-				plot_ret = Plots.plot(plot_ret, p_cur, 
-					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
-			end
-			count += 1
-			
-		end
-		plot_ret
-		
+begin 
+	function get_space()
+	ranges = Dict(String(feature) => max(1.0, Float64(maximum(col)-minimum(col))) 
+			for (feature, col) in pairs(eachcol(X)))
+	maxs = Dict(String(feature) => Float64(maximum(col)) 
+			for (feature, col) in pairs(eachcol(X)))
+	mins = Dict(String(feature) => Float64(minimum(col)) 
+			for (feature, col) in pairs(eachcol(X)))
+		return Dict("ranges" => ranges, "maxs" => maxs,"mins" => mins)
 	end
+	space = get_space();
+	
+	md"feature space"
 end
 
 # ╔═╡ e99670d2-a1a8-11eb-3cbb-49366adb2667
@@ -554,8 +469,210 @@ let
 		)
 end
 
+# ╔═╡ 479acc12-915c-11eb-1a4b-f588eb756b0d
+begin 
+	feature_dict = Dict(feature => f_index 
+		for (f_index, feature) in 	enumerate(names(orig_instance)));
+		
+	md" feature_dict "
+end
+
+# ╔═╡ b342661f-3acc-4619-9593-fdd0f1014858
+let 
+	count = 1
+	row_index = 1
+	group = groups[group_idx]
+	features = names(group)
+	# xs = Array{String}(undef, nrow(group)*length(features))
+	
+	mins = space["mins"]
+	maxs = space["maxs"]
+	ranges = space["ranges"]
+	
+	ys = []
+
+	for cf in eachrow(group)
+		for feature in features
+			append!(ys, (cf[feature]-mins[feature])/ranges[feature])
+		end
+	end
+	
+	ori_xs = Array{String}(undef,length(features))
+	ori_ys = []
+	for feature in features
+		append!(ori_ys, 
+			(user_input[feature_dict[feature]]-mins[feature]) / 
+			ranges[feature])
+		row_index += 1
+	end
+	
+	gr()
+		
+	p = Plots.scatter(
+		repeat(features,nrow(group)), ys,
+		ylims=(0,1),
+		ylabel="Normalized Range",
+		label = "")
+	
+	scatter!(features, ori_ys, label = "")
+	Foldable(string("Show plot: "), p)
+end
+
+# ╔═╡ 06dbd968-7453-4226-aaea-1580819f8ec3
+begin 
+	function generate_group_action(goodness, explanations, actions, user_input, K)
+		out = ""
+		if  (!goodness)
+			groups = get_group(explanations, K, user_input)
+			for group in groups
+				features = String.(names(group))
+				out *= "\\\n**COUNTERFACTUAL GROUP : $(features)**\\\n"
+				for r_index in 1:nrow(group)
+					cf = group[r_index,:]
+					out *= " -- COUNTERFACTUAL $(r_index)\\\n"
+					for feature in features
+						out *= "$(feature) ： $(user_input[feature_dict[feature]]) \$\\to\$ $(cf[feature])\\\n"
+					end
+				end
+			end
+		end
+		return out
+	end;
+	md"generate group action"
+end
+
+# ╔═╡ c8b1d8ee-8517-4e79-b1fa-429f659da38e
+# begin
+# 	lindex = 3; uindex=5
+# 	md"""
+# 	### Top Counterfactual Explanations
+# 	Number of actions to display: $(@bind actions2 NumberField(1:100000; default=6))
+# 	$(@bind actions3 NumberField(actions2:100000; default=5))
+# 	"""
+# end
+
+# ╔═╡ 498293d7-58aa-4be1-90de-d0b5ce5c8b42
+#= html"""<b style="font-family:'JuliaMono';">Counterfactual</b> 
+<details close>
+<summary style="font-family:JuliaMono;">Want to ruin the surprise?</summary>
+....
+</details>""" =#
+
+# ╔═╡ 0a72330b-27e2-494e-bbfc-c0fc6cff4d94
+md"### Previous Group Function"
+
+# ╔═╡ c84900c4-9d28-11eb-11dc-7bdfed0e91af
+md"""
+### Summary of Generated Explanations
+
+Number of groups： $(@bind K_PLAF NumberField(1:100000; default=3))
+"""
+
+# ╔═╡ d5beb41a-9d28-11eb-2f1f-69bcc72b2005
+Markdown.parse(
+	generate_group_action(false, explanations, actions, orig_instance, K_PLAF)
+)
+
+# ╔═╡ 4d0dcd7a-a1a1-11eb-305a-fb9789300d55
+let 
+	if  (!goodness)
+		plot_ret = nothing
+		count = 1
+		groups = get_group(explanations, K_PLAF, instance)
+
+		for group in groups #  index in 0:length(groups)-1
+			row_index = 1
+			features = String.(names(group))
+			xs = Array{String}(undef, nrow(group)*length(features))
+			ys = []
+			
+			for r_index in 1:DataFrames.nrow(group)
+				cf = group[r_index,:]
+				for feature in features
+					xs[row_index] = string(feature_dict[feature])
+					row_index += 1
+					append!(ys, cf[feature])
+				end
+			end
+			ori_xs = Array{String}(undef,length(features))
+			ori_ys = []
+			row_index = 1
+			for feature in features
+				ori_xs[row_index] = string(feature_dict[feature])
+				append!(ori_ys, user_input[feature_dict[feature]])
+				row_index += 1
+			end
+			
+			p_cur = Plots.scatter(xs, ys, label = "cf")
+			scatter!(ori_xs, ori_ys, label = "ori")
+			if count == 1
+				plot_ret = p_cur 
+			elseif count == length(groups)
+				plot_ret = Plots.plot(plot_ret, p_cur, 
+					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
+			else
+				plot_ret = Plots.plot(plot_ret, p_cur, 
+					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
+			end
+			count += 1
+			
+		end
+		plot_ret
+		
+	end
+end;
+
+# ╔═╡ 71f98784-a1a4-11eb-2afd-b70324f6ade1
+let 
+	if  (!goodness)
+		plot_ret = nothing
+		count = 1
+		groups = get_group(explanations, K_PLAF, instance)
+
+		for group in groups # index in 0:length(groups)-1
+			row_index = 1
+			features = String.(names(group))
+			xs = Array{String}(undef, nrow(group)*length(features))
+			ys = []
+			
+			for r_index in 1:DataFrames.nrow(group)
+				cf = group[r_index,:]
+				for feature in features
+					xs[row_index] = string(feature_dict[feature])
+					row_index += 1
+					append!(ys, (cf[feature]-space["mins"][feature]) / space["ranges"][feature])
+				end
+			end
+			ori_xs = Array{String}(undef,length(features))
+			ori_ys = []
+			row_index = 1
+			for feature in features
+				ori_xs[row_index] = string(feature_dict[feature])
+				append!(ori_ys, 
+					(user_input[feature_dict[feature]]-space["mins"][feature]) / 
+					space["ranges"][feature])
+				row_index += 1
+			end
+			
+			p_cur = Plots.scatter(xs, ys, label = "")
+			scatter!(ori_xs, ori_ys, label = "")
+			if count == 1
+				plot_ret = p_cur 
+			elseif count == length(groups)
+				plot_ret = Plots.plot(plot_ret, p_cur, 
+					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
+			else
+				plot_ret = Plots.plot(plot_ret, p_cur, 
+					layout = Plots.grid(1, 2, widths=[1-1/count, 1/count]))
+			end
+			count += 1
+			
+		end
+		plot_ret
+	end
+end
+
 # ╔═╡ Cell order:
-# ╟─543c16e2-7b18-11eb-3bba-fbd8cf708ca5
 # ╟─baadbc4c-7ba3-11eb-3cbb-a32fc7755748
 # ╟─14adad40-6af7-4389-ae3a-b0d2a1462424
 # ╠═1b2d0f6b-aab0-430f-9d92-67c6e585bc73
@@ -570,22 +687,27 @@ end
 # ╠═7a6f48ad-8173-4ad5-bd4d-4a042fc49882
 # ╟─b62dd892-5a2d-4a19-a5c4-4c8fc2221222
 # ╟─f2ea9cbc-ebf8-4287-bc2b-afa1a80ea160
-# ╟─498293d7-58aa-4be1-90de-d0b5ce5c8b42
-# ╟─c84900c4-9d28-11eb-11dc-7bdfed0e91af
-# ╟─d5beb41a-9d28-11eb-2f1f-69bcc72b2005
-# ╟─4d0dcd7a-a1a1-11eb-305a-fb9789300d55
-# ╟─71f98784-a1a4-11eb-2afd-b70324f6ade1
+# ╟─fa8320c0-1759-4f16-83ca-8329493b9dfa
+# ╟─997132af-d04c-4745-a42a-2563e07b5ca6
+# ╟─3245072c-e91e-418c-b8ce-63386333da8c
+# ╟─b342661f-3acc-4619-9593-fdd0f1014858
 # ╟─0bc25628-9d29-11eb-2d22-070e269ea036
-# ╟─1113b964-9d29-11eb-19db-d1c5cb43d340
-# ╟─2067e1ce-9d29-11eb-06a2-d7b0a7503416
+# ╠═1113b964-9d29-11eb-19db-d1c5cb43d340
 # ╟─a5043111-1600-4d6d-ac55-185d124abca9
 # ╟─1954ed36-7393-4ff6-843a-17512f79a92b
 # ╟─8f29bd6c-9d29-11eb-0e06-d9b5178cbe33
 # ╟─e99670d2-a1a8-11eb-3cbb-49366adb2667
 # ╟─80f49634-9d2b-11eb-359c-032422eaa82a
 # ╟─95028f46-a1a9-11eb-276c-313e5d8bb515
-# ╟─479acc12-915c-11eb-1a4b-f588eb756b0d
-# ╟─06dbd968-7453-4226-aaea-1580819f8ec3
+# ╟─95490a61-0aa7-40f0-aa78-da9a2db11852
 # ╟─a70ab516-913b-11eb-2f4c-5b3e31e2d669
 # ╟─ce01f106-a19f-11eb-12e3-cd894166023d
-# ╟─d33ade46-a1a7-11eb-0549-ffc4cb818354
+# ╟─06dbd968-7453-4226-aaea-1580819f8ec3
+# ╟─479acc12-915c-11eb-1a4b-f588eb756b0d
+# ╠═c8b1d8ee-8517-4e79-b1fa-429f659da38e
+# ╠═498293d7-58aa-4be1-90de-d0b5ce5c8b42
+# ╟─0a72330b-27e2-494e-bbfc-c0fc6cff4d94
+# ╟─c84900c4-9d28-11eb-11dc-7bdfed0e91af
+# ╟─d5beb41a-9d28-11eb-2f1f-69bcc72b2005
+# ╟─4d0dcd7a-a1a1-11eb-305a-fb9789300d55
+# ╟─71f98784-a1a4-11eb-2afd-b70324f6ade1

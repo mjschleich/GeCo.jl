@@ -61,6 +61,11 @@ export mutation!
 include("components/selection.jl")
 export selection!
 
+# Implementation of the distance function used by GeCo
+include("components/summary.jl")
+export actions, actionsDemo
+
+
 function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProgram, classifier;
     desired_class=1,
     k::Int64=100,
@@ -220,43 +225,6 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
     end
 
     return population, count, generation, representation_size
-end
-
-
-function actions(counterfactuals::DataFrame, orig_instance::DataFrameRow;
-    num_actions::Int64=5, print::Bool=true, output::String="text")
-    out = ""
-    for idx in 1:min(num_actions, nrow(counterfactuals))
-        cf = counterfactuals[idx,:]
-        if output == "text"
-            out *= "COUNTERFACTUAL $(idx)\\nDesired Outcome: $(cf.outc),\\tScore: $(cf.score)\\n"
-        elseif output == "md"
-            out *= "\\\n**COUNTERFACTUAL $(idx)**\\\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)\\\n"
-        elseif output == "html"
-            out *= "<b>COUNTERFACTUAL $(idx)</b>\nDesired Outcome: $(cf.outc),\tScore: $(cf.score)\n"
-        end
-        for feature in propertynames(orig_instance)
-            if cf[feature] != orig_instance[feature]
-                if output == "text"
-                    out *= "$feature : \t$(orig_instance[feature]) --> $(cf[feature])\\n"
-                elseif output == "md"
-                    out*= "$feature : \t$(orig_instance[feature]) \$\\to\$ $(cf[feature])\\\n"
-                elseif output == "html"
-                    out *= "$feature : \t$(orig_instance[feature]) \$\\to\$ $(cf[feature])\\\n"
-                end
-            end
-        end
-    end
-    print && println(Markdown.parse(out))
-    out
-end
-
-
-function actions(counterfactuals::DataManager, orig_instance; num_actions = 5)
-    # Turn DataManager into a DataFrame
-    df = materialize(counterfactuals)
-    DataFrame.sort!(df, :score)
-    actions(df, orig_instance; num_actions = num_actions)
 end
 
 

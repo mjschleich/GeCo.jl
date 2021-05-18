@@ -5,13 +5,13 @@ data = CSV.File(path*"/yelp_data.csv"; limit=1000000) |> DataFrame
 data.high_ranking = Int64.(data.review_stars .> 3)
 
 ## Reduce number of cities:
-city_gb = combine(groupby( data, :city_id), nrow => :count)
+city_gb = combine(DataFrames.groupby( data, :city_id), nrow => :count)
 sort!(city_gb, :count, rev=true)
 top_cities = city_gb.city_id[1:499]
 data.city = [(city in top_cities) ? city : 500 for city in data.city_id]
 
 ## Reduce number of categories:
-categ_gb = combine(groupby(data, :category_id), nrow => :count)
+categ_gb = combine(DataFrames.groupby(data, :category_id), nrow => :count)
 sort!(categ_gb, :count, rev=true)
 top_categories = categ_gb.category_id[1:499]
 data.category = [(categ in top_categories) ? categ : 500 for categ in data.category_id]

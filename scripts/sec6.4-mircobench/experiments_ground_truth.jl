@@ -47,7 +47,7 @@ function thresholdGenerator(X, symbols)
     for symbol in symbols
         thresh = 0
         freq = 0
-        space = combine(groupby(X, symbol; sort=true), nrow => :count)
+        space = combine(DataFrames.groupby(X, symbol; sort=true), nrow => :count)
 
         low = max(2,Int(floor(0.3*nrow(space))))
         high = min(nrow(space),Int(ceil(0.7 * nrow(space))))

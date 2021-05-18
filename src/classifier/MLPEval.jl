@@ -33,7 +33,7 @@ initMLPEval(classifier, orig_instance) =
 
 @inline function predict(clf::PartialMLPEval, df::DataFrame)
     insertcols!(df, :pred => Vector{Float64}(undef, nrow(df)), copycols=false)
-    gb = groupby(df, :mod)
+    gb = DataFrames.groupby(df, :mod)
     g = ACTIVATIONS[clf.activation]
     for df in gb
         mod::BitVector = df[1,:mod]

@@ -102,7 +102,7 @@ function initDomains(groups::Vector{FeatureGroup}, data::DataFrame)::Vector{Data
             domains[gidx].count = ones(Int64, nrow(data))
             domains[gidx] = unique(domains[gidx])
         else
-            domains[gidx] = combine(groupby(data[!,feat_syms], feat_syms), nrow => :count)
+            domains[gidx] = combine(DataFrames.groupby(data[!,feat_syms], feat_syms), nrow => :count)
         end
     end
     return domains
@@ -322,7 +322,7 @@ end
 #         feasible_rows .&= .!identical_rows
 
 #         feasible_space[gidx] = combine(
-#                 groupby(
+#                 DataFrames.groupby(
 #                     data[feasible_rows, feat_names],
 #                     feat_names),
 #                 nrow => :count

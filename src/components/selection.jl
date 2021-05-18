@@ -10,6 +10,8 @@ function selection!(population::DataFrame, k::Int64, orig_instance::DataFrameRow
     dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
         distance_temp=distance_temp, norm_ratio=norm_ratio)
 
+
+
     # population.outc = pred .> 0.5
     # population.score = dist + map(predp -> !predp[2] ? 2.0 - predp[1] : 0.0, zip(preds, population.outc))
 
@@ -27,6 +29,47 @@ function selection!(population::DataFrame, k::Int64, orig_instance::DataFrameRow
 
     # Check if the top-K are established CFs, if so we have converged
     converged = all(population.estcf[1:convergence_k])
+
+    # Update the established CFs
+    population.estcf .= true
+
+    return converged
+end
+
+
+# for network
+function selection!(population::DataFrame, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier, desired_class, network::BayesNet;
+    norm_ratio::Array{Float64,1}=default_norm_ratio,
+    convergence_k::Int=10,
+    distance_temp::Vector{Float64}=Vector{Float64}())
+
+    preds::Vector{Float64} = score(classifier, population, desired_class)
+
+    dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
+        distance_temp=distance_temp, norm_ratio=norm_ratio)
+
+    causal_prob = likelihood(population, feasible_space.num_features, network)
+
+    # population.outc = pred .> 0.5
+    # population.score = dist + map(predp -> !predp[2] ? 2.0 - predp[1] : 0.0, zip(preds, population.outc))
+
+    for i in 1:nrow(population)
+        p = (preds[i] < 0.5)
+        population.score[i] = dist[i]*(0-causal_prob[i]/10) + p * (2.0 - preds[i])
+        population.outc[i] = !p
+    end
+
+    # TODO: Can we optimize this?
+    sort!(population, [:score])
+
+    # We keep the top-k counterfactuals
+    (size(population,1) > k) && delete!(population, (k+1:size(population,1)))
+
+    # Check if the top-K are established CFs, if so we have converged
+    converged = false 
+    if size(population,1) > convergence_k
+        all(population.estcf[1:convergence_k])
+    end
 
     # Update the established CFs
     population.estcf .= true
@@ -105,7 +148,7 @@ function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow,
         norm_ratio = norm_ratio, convergence_k = convergence_k, distance_temp = distance_temp)
 
     empty!(manager)
-    for entities in groupby(df, :mod)
+    for entities in DataFrames.groupby(df, :mod)
         append!(manager, entities[1,:mod], entities[:, Not(:mod)])
     end
 

@@ -1,7 +1,7 @@
 # Implementations of the score function, which overloads prediction functions for different ML packages
 
 function score(classifier::MLJ.Machine, counterfactuals::DataFrame, desired_class)::Vector{Float64}
-    return broadcast(MLJ.pdf, MLJ.predict(classifier, counterfactuals[!, 1:end-NUM_EXTRA_COL]), desired_class)
+    return broadcast(MLJ.pdf, MLJ.predict(classifier, counterfactuals[!, 1:end-NUM_EXTRA_COL]), float(desired_class))
 end
 
 function score(classifier::PyCall.PyObject, counterfactuals::DataFrame, desired_class)::Vector{Float64}

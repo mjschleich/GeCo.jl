@@ -9,7 +9,7 @@ function crossover!(population::DataFrame, orig_instance::DataFrameRow, feasible
     num_features = feasible_space.num_features
     ranges = feasible_space.ranges
 
-    gb = groupby( population[population.outc .== true,:], :mod )
+    gb = DataFrames.groupby( population[population.outc .== true,:], :mod )
 
     num_groups = size(keys(gb),1)
 

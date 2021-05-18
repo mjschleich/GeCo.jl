@@ -1,0 +1,119 @@
+{
+    "features": [ 
+        { 
+            "name": "ExternalRiskEstimate", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        {
+            "name": "MSinceOldestTradeOpen", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        {
+            "name": "MSinceMostRecentTradeOpen", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        { 
+            "name": "AverageMInFile", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        {
+            "name": "NumSatisfactoryTrades",
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        { 
+            "name": "NumTrades60Ever2DerogPubRec", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        },
+        {  
+            "name": "NumTrades90Ever2DerogPubRec", 
+            "type": "numerical"
+        },
+        { 
+            "name": "PercentTradesNeverDelq", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        { 
+            "name": "MSinceMostRecentDelq", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        { 
+            "name": "MaxDelq2PublicRecLast12M", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        { 
+            "name": "MaxDelqEver", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        { 
+            "name": "NumTotalTrades", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        { 
+            "name": "NumTradesOpeninLast12M", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        },
+        { 
+            "name": "PercentInstallTrades", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        },
+        { 
+            "name": "MSinceMostRecentInqexcl7days", 
+            "type": "numerical", 
+            "constraints": ["increasing"]
+        },
+        { 
+            "name": "NumInqLast6M", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        },
+        { 
+            "name": "NumInqLast6Mexcl7days", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        },
+        { 
+            "name": "NetFractionRevolvingBurden", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        },
+        { 
+            "name": "NetFractionInstallBurden", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        },
+        { 
+            "name": "NumRevolvingTradesWBalance", 
+            "type": "numerical" 
+        },
+        { 
+            "name": "NumInstallTradesWBalance", 
+            "type": "numerical"
+        },
+        { 
+            "name": "NumBank2NatlTradesWHighUtilization", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        },
+        { 
+            "name": "PercentTradesWBalance", 
+            "type": "numerical", 
+            "constraints": ["decreasing"]
+        }
+    ],
+    "groups": [ 
+    ]
+}
+

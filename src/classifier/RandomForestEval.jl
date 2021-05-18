@@ -101,7 +101,7 @@ end
     # fitresult = ensemble.fitresult
     desired_class_value = ensemble.desired_value
 
-    grouped_entities = groupby(population, :mod)
+    grouped_entities = DataFrames.groupby(population, :mod)
     num_feat = size(population, 2) - NUM_EXTRA_COL
     insertcols!(population, :pred => 0.)
     insertcols!(population, :orig_ref => 1:nrow(population))
@@ -198,7 +198,7 @@ end
     desired_class_value = ensemble.desired_value
 
     # Group the entities by their mod     # TODO: why are we grouping the entities?
-    # grouped_entities = groupby(df, :mod)
+    # grouped_entities = DataFrames.groupby(df, :mod)
 
     # Number of entities and features in the DF
     num_feat = size(df, 2) - NUM_EXTRA_COL

@@ -10,7 +10,7 @@ deletecols!(data, [:Row_ID, :Claim_Amount, :Blind_Submodel, :Household_ID, :NVCa
 ## UNDER SAMPLING TO CREATE A BALANCED DATASET
 data = data[shuffle(1:size(data,1)), :]
 
-data_groups = groupby(data, :NoClaim)
+data_groups = DataFrames.groupby(data, :NoClaim)
 data_train = data_groups[1][1:size(data_groups[2],1), :]
 append!(data_train, data_groups[2])
 data_train = data_train[shuffle(1:nrow(data_train)),:]

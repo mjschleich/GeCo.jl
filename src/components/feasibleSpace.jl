@@ -32,8 +32,29 @@ struct FeasibleSpace
     num_features::Int64
     feasibleSpace::Vector{DataFrame}
     implications::Vector{GroundedImplication}
+    weights::Dict{Symbol,Float64}
 end
 
+function initWeights(prog::PLAFProgram, data::DataFrame)
+
+    weights = Dict()
+    for feature in propertynames(data)
+        weights[feature] = 1.0
+    end
+
+    for weight in prog.weight_all
+        @assert weight[1] ∈ propertynames(data) "The feature $(weight[1]) does not occur in the input data."
+        weights[weight[1]] = weight[2]
+    end
+    weight_sum = 0
+    for feature in propertynames(data)
+        weight_sum += weights[feature]
+    end
+    for feature in propertynames(data)
+        weights[feature] = weights[feature] * ncol(data) / weight_sum
+    end
+    return weights
+end
 
 function initGroups(prog::PLAFProgram, data::DataFrame)
 
@@ -192,7 +213,7 @@ end
 
 function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFProgram;
     domains::Vector{DataFrame}=Vector{DataFrame}())::FeasibleSpace
-
+    weights = initWeights(prog, data)
     constraints = prog.constraints
 
     groups = initGroups(prog, data)
@@ -237,7 +258,7 @@ function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFP
 
     groundedImplications = groundImplications(prog.implications, groups, feasible_space, orig_instance)
 
-    return FeasibleSpace(groups, ranges, num_features, feasible_space, groundedImplications)
+    return FeasibleSpace(groups, ranges, num_features, feasible_space, groundedImplications, weights)
 end
 
 

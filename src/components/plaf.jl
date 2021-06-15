@@ -10,24 +10,34 @@ struct Implication
     conseqFeatures::Array{Symbol, 1}
 end
 
+struct Weight
+    feature::Symbol
+    weight::Float64
+end
+
 struct PLAFProgram
+    weight_all::Vector{Tuple{Symbol,Float64}}
     groups::Vector{Tuple{Vararg{Symbol}}}
     constraints::Vector{Constraint}
     implications::Vector{Implication}
 end
 
-PLAFProgram() = PLAFProgram(Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
-initPLAF() = PLAFProgram(Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
+PLAFProgram() = PLAFProgram(Vector{Tuple{Symbol,Float64}}(), Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
+initPLAF() = PLAFProgram(Vector{Tuple{Symbol,Float64}}(),  Vector{Tuple}(), Vector{Constraint}(), Vector{Implication}())
 
 PLAFProgram(p::PLAFProgram) = PLAFProgram(
+    Vector{Tuple{Symbol,Float64}}(p.weight_all),
     Vector{Tuple}(p.groups),
     Vector{Constraint}(p.constraints),
     Vector{Implication}(p.implications))
+    
 
 Base.empty!(p::PLAFProgram) = begin
     empty!(p.groups)
     empty!(p.constraints)
     empty!(p.implications)
+    empty!(p.weight_all)
+    empty!(p.weights)
     p
 end
 
@@ -41,12 +51,14 @@ function Base.push!(p::PLAFProgram, constraint::Union{Constraint, Implication})
 end
 
 function Base.show(io::IO, p::PLAFProgram)
-    print(io, "PLAFProgram ($(length(p.constraints)) constraints, $(length(p.implications)) implications, $(length(p.groups)) groups)")
+    print(io, "PLAFProgram ($(length(p.constraints)) constraints, 
+                $(length(p.implications)) implications, 
+                $(length(p.groups)) groups,
+                $(length(p.weight_all)) weights)")
 end
 
 plaf_helper(x, t) = begin
     constraints = ground.(t)
-
     quote
         $push!($x, $(constraints...))
     end
@@ -63,15 +75,30 @@ end
 group_helper(x, t) = begin
     if t isa Tuple{Expr}
         groups = group_coverter.(t)
+        println("exp")
         quote
             $push!($x.groups, $(groups...))
         end
     elseif t isa Tuple{Symbol,Vararg{Symbol}}
+        println("$(typeof(t))")
         quote
             $push!($x.groups, $t)
         end
     else
         @error "A group should define a list of features not $(typeof(t))"
+    end
+end
+
+
+
+weight_helper(x, t) = begin
+    print(typeof(t))
+    if t isa Tuple{Symbol,Float64}
+        quote
+            $push!($x.weight_all, $t) 
+        end
+    else
+        @error "A weight should be a feature and a float value not $(typeof(t))"
     end
 end
 
@@ -81,6 +108,10 @@ end
 
 macro GROUP(x, args...)
     esc(group_helper(x,args))
+end
+
+macro WEIGHT(x, args...)
+    esc(weight_helper(x, args))
 end
 
 function addkey!(membernames, nam)::Symbol

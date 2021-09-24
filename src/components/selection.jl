@@ -55,7 +55,7 @@ function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow,
 
         outc::BitVector = pred .> 0.5
         entities.outc = outc
-        entities.score = dist + map(predp -> predp[2] * ( 2.0 - predp[1] ), zip(pred, outc))
+        entities.score = dist + map(predp -> !predp[2] * ( 2.0 - predp[1] ), zip(pred, outc))
 
         # dist + !p ? 2.0 - pred : 0.0
         append!(scores, zip(entities.score::Vector{Float64}, entities.estcf::Vector{Bool}))

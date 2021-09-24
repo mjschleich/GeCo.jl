@@ -82,7 +82,8 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
     run_crossover::Bool=true,
     run_mutation::Bool=true,
     size_distance_temp::Int64=100_000,
-    verbose::Bool=false
+    verbose::Bool=false,
+    decision_threshold::Float64=0.5
     )
 
     distance_temp = Array{Float64, 1}(undef, size_distance_temp)
@@ -109,7 +110,8 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
         print("-- Time selection:\t")
         @time selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
-            distance_temp=distance_temp)
+            distance_temp=distance_temp,
+            threshold=decision_threshold)
 
         @time while generation < min_num_generations || !converged && generation < max_num_generations
             println("Generation: ", generation+1)
@@ -125,7 +127,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
 
             print("-- Time Selection:\t")
             converged = @time selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
-                norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
+                norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k, threshold=decision_threshold)
 
             generation += 1
         end
@@ -144,7 +146,8 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
 
         selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
-            distance_temp=distance_temp)
+            distance_temp=distance_temp,
+            threshold=decision_threshold)
 
         while generation < min_num_generations || !converged && generation < max_num_generations
 
@@ -157,7 +160,7 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
             representation_size[generation+1] = (compress_data ? size_pop[2] : size_pop[1] * size_pop[2])
 
             converged = selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
-                norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k)
+                norm_ratio=norm_ratio, distance_temp=distance_temp, convergence_k=convergence_k, threshold=decision_threshold)
 
             # converged &= population.outc[1]
             generation += 1
@@ -178,7 +181,8 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
 
         stime = @elapsed selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
             norm_ratio=norm_ratio,
-            distance_temp=distance_temp)
+            distance_temp=distance_temp,
+            threshold=decision_threshold)
 
         prep_time += stime
 
@@ -204,7 +208,8 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
                 selection!(population, k, orig_instance, feasible_space, classifier, desired_class;
                     norm_ratio=norm_ratio,
                     distance_temp=distance_temp,
-                    convergence_k=convergence_k)
+                    convergence_k=convergence_k,
+                    threshold=decision_threshold)
 
             selection_time += stime
 

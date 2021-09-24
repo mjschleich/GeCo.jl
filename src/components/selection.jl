@@ -3,18 +3,16 @@
 function selection!(population::DataFrame, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
-    distance_temp::Vector{Float64}=Vector{Float64}())
+    distance_temp::Vector{Float64}=Vector{Float64}(),
+    threshold::Float64=0.5)
 
     preds::Vector{Float64} = score(classifier, population, desired_class)
 
     dist = distance(population, orig_instance, feasible_space.num_features, feasible_space.ranges;
         distance_temp=distance_temp, norm_ratio=norm_ratio)
 
-    # population.outc = pred .> 0.5
-    # population.score = dist + map(predp -> !predp[2] ? 2.0 - predp[1] : 0.0, zip(preds, population.outc))
-
     for i in 1:nrow(population)
-        p = (preds[i] < 0.5)
+        p = (preds[i] < threshold)
         population.score[i] = dist[i] + p * (2.0 - preds[i])
         population.outc[i] = !p
     end
@@ -40,7 +38,8 @@ predict(classifier::PartialMLPEval,entities,mod) = MLPEvaluation.predict(classif
 function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier::Union{PartialRandomForestEval, PartialMLPEval}, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
-    distance_temp::Vector{Float64}=Vector{Float64}())
+    distance_temp::Vector{Float64}=Vector{Float64}(),
+    threshold::Float64=0.5)
 
     scores = Vector{Tuple{Float64,Bool}}()
 
@@ -53,7 +52,7 @@ function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow,
         dist::Vector{Float64} = distance(entities, orig_instance, feasible_space.num_features, feasible_space.ranges;
             distance_temp=distance_temp, norm_ratio=norm_ratio)
 
-        outc::BitVector = pred .> 0.5
+        outc::BitVector = pred .> threshold
         entities.outc = outc
         entities.score = dist + map(predp -> !predp[2] * ( 2.0 - predp[1] ), zip(pred, outc))
 
@@ -97,14 +96,15 @@ end
 function selection!(manager::DataManager, k::Int64, orig_instance::DataFrameRow, feasible_space::FeasibleSpace, classifier::Union{MLJ.Machine, PyCall.PyObject}, desired_class;
     norm_ratio::Array{Float64,1}=default_norm_ratio,
     convergence_k::Int=10,
-    distance_temp::Vector{Float64}=Vector{Float64}(undef,100))
+    distance_temp::Vector{Float64}=Vector{Float64}(undef,100),
+    threshold::Float64=0.5)
 
     df = materialize(manager)
 
     res = selection!(df, k, orig_instance, feasible_space, classifier, desired_class;
-        norm_ratio = norm_ratio, convergence_k = convergence_k, distance_temp = distance_temp)
+        norm_ratio = norm_ratio, convergence_k = convergence_k, distance_temp = distance_temp, threshold = threshold)
 
-    empty!(manager)
+    empty!(manager)Î
     for entities in groupby(df, :mod)
         append!(manager, entities[1,:mod], entities[:, Not(:mod)])
     end

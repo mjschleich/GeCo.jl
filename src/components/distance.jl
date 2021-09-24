@@ -7,7 +7,7 @@ function distance(df::DataFrame, orig_instance::DataFrameRow, num_features::Int6
     distance_temp::Array{Float64,1}=zeros(Float64, 4*nrow(df)))::Array{Float64,1}
 
     if length(distance_temp) < size(df,1)*4
-        @warn "We increase the size of distance_temp in selection operator"
+        @warn "We increase the size of distance_temp in selection operator to $(size(df,1)*4)"
         resize!(distance_temp, size(df,1)*4)
     end
 

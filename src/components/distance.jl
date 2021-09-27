@@ -22,7 +22,7 @@ function distance(df::DataFrame, orig_instance::DataFrameRow, num_features::Int6
         feature in (:generation, :score, :outc, :mod, :estcf, :count, :distance) && continue
 
 
-        if elscitype(col) != Multiclass     # Feature is not categorical
+        if !(eltype(col) <: CategoricalValue)     # Feature is not categorical
 
             data::Vector{Float64} = col
             orig_val::Float64 = orig_instance[feature]
@@ -78,7 +78,7 @@ function distance(row::DataFrameRow, orig_instance::DataFrameRow, num_features::
         feature in (:generation, :score, :outc, :mod, :estcf, :count) && continue
 
         val = row[feature]
-        if eltype(val) != Multiclass
+        if !(val isa CategoricalValue)
             if haskey(featureRanges, feature)
                 range = featureRanges[feature]
             else

@@ -196,7 +196,7 @@ function feasibleSpace(data::DataFrame, orig_instance::DataFrameRow, prog::PLAFP
     constraints = prog.constraints
 
     groups = initGroups(prog, data)
-    ranges = Dict(feature => max(1.0, Float64(maximum(col)-minimum(col))) for (feature, col) in pairs(eachcol(data)))
+    ranges = Dict(feature => (eltype(col) <: CategoricalValue) ? 1.0 : max(1.0, Float64(maximum(col)-minimum(col))) for (feature, col) in pairs(eachcol(data)))
     num_features = ncol(data)
 
     feasible_space = Vector{DataFrame}(undef, length(groups))

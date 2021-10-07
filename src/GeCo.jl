@@ -2,7 +2,7 @@ module GeCo
 
 export explain, actions, featureList, initializeFeatures, testExplanations
 
-using DataFrames, Statistics, PyCall, Markdown
+using DataFrames, Statistics, PyCall, Markdown, Random
 import ScikitLearn, JSON, StatsBase, MLJ
 
 const default_norm_ratio = [0.25, 0.25, 0.25, 0.25]
@@ -89,6 +89,8 @@ function explain(orig_instance::DataFrameRow, data::DataFrame, program::PLAFProg
     verbose::Bool=false,
     decision_threshold::Float64=0.5
     )
+
+    Random.seed!(19)
 
     distance_temp = Array{Float64, 1}(undef, size_distance_temp)
     representation_size = zeros(Int64, max_num_generations+1)

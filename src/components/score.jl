@@ -9,6 +9,8 @@ function score(classifier::PyCall.PyObject, counterfactuals::DataFrame, desired_
         return MLPEvaluation.predict(classifier.coefs_, classifier.intercepts_, classifier.activation, MLJ.matrix(counterfactuals[!, 1:end-NUM_EXTRA_COL]))
     elseif occursin("sklearn", classifier.__module__)
         return ScikitLearn.predict_proba(classifier, MLJ.matrix(counterfactuals[!, 1:end-NUM_EXTRA_COL]))[:, desired_class+1]
+    elseif occursin("keras", classifier.__module__)
+        return vec(classifier.predict(Matrix(counterfactuals[!, 1:end-NUM_EXTRA_COL])))
     elseif occursin("torch", classifier.__module__)
         torch = pyimport("torch")
         in = torch.tensor(convert(Matrix, counterfactuals[!, 1:end-NUM_EXTRA_COL])).float()
